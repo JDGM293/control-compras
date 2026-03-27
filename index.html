@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Perolon — Panel de herramientas</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f0f4ff;min-height:100vh;display:flex;flex-direction:column}
+.accent-bar{height:4px;background:linear-gradient(90deg,#1a3a6b,#2563eb,#f97316);width:100%}
+header{background:#1a3a6b;padding:16px 32px;display:flex;align-items:center;gap:12px}
+.logo{width:38px;height:38px;background:#f97316;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo svg{width:22px;height:22px}
+header h1{font-size:19px;font-weight:700;color:#fff}
+header p{font-size:13px;color:#93b4e8;margin-left:auto}
+.main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 20px}
+.intro{text-align:center;margin-bottom:40px}
+.intro h2{font-size:27px;font-weight:700;color:#1a3a6b;margin-bottom:8px}
+.intro p{font-size:15px;color:#6b7280}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px;width:100%;max-width:700px}
+.card{background:#fff;border:2px solid #e0e8ff;border-radius:14px;padding:28px 24px;cursor:pointer;transition:box-shadow 0.15s,transform 0.15s;text-decoration:none;display:block}
+.card:hover{box-shadow:0 8px 24px rgba(26,58,107,0.15);transform:translateY(-3px);border-color:#1a3a6b}
+.card-icon{width:50px;height:50px;background:linear-gradient(135deg,#1a3a6b,#2563eb);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.card-icon svg{width:26px;height:26px}
+.card-name{font-size:16px;font-weight:700;color:#1a3a6b;margin-bottom:6px}
+.card-desc{font-size:13px;color:#6b7280;line-height:1.5}
+.card-badge{display:inline-block;margin-top:14px;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa}
+.card-coming{background:#fafafa;border:2px dashed #e5e7eb;cursor:default}
+.card-coming:hover{box-shadow:none;transform:none;border-color:#e5e7eb}
+.card-coming .card-icon{background:#e8eaed}
+.card-coming .card-badge{background:#f3f4f6;color:#9ca3af;border-color:#e5e7eb}
+footer{text-align:center;padding:20px;color:#9ca3af;font-size:12px;border-top:1px solid #e5e7eb;background:#fff}
+</style>
+</head>
+<body>
+<div class="accent-bar"></div>
+<header>
+  <div class="logo">
+    <svg fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5" fill="#fff"/><rect x="14" y="3" width="7" height="7" rx="1.5" fill="#fff"/><rect x="3" y="14" width="7" height="7" rx="1.5" fill="#fff"/><rect x="14" y="14" width="7" height="7" rx="1.5" fill="#fff"/></svg>
+  </div>
+  <h1>Perolon</h1>
+  <p>Panel de herramientas</p>
+</header>
+
+<div class="main">
+  <div class="intro">
+    <h2>Selecciona una herramienta</h2>
+    <p>Haz clic en cualquier recuadro para acceder al sistema</p>
+  </div>
+  <div class="grid">
+
+    <a href="control-compras.html" class="card">
+      <div class="card-icon">
+        <svg fill="none" viewBox="0 0 24 24"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="card-name">Control de Compras</div>
+      <div class="card-desc">Registra compras, envíos y pagos. Calcula ganancias automáticamente.</div>
+      <span class="card-badge">Activo</span>
+    </a>
+
+    <div class="card card-coming">
+      <div class="card-icon">
+        <svg fill="none" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke="#aaa" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <div class="card-name" style="color:#aaa">Próximamente</div>
+      <div class="card-desc" style="color:#ccc">Aquí aparecerá tu próxima herramienta.</div>
+      <span class="card-badge">En desarrollo</span>
+    </div>
+
+  </div>
+</div>
+
+<footer>perolon.com · Uso interno</footer>
+</body>
+</html>
