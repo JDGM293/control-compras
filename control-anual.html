@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control Anual</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;font-size:15px;background:#f0f2f5;color:#111}
+.app{padding:12px}
+.view{display:none}.view.active{display:block}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:10px;background:#fff;border:1px solid #d0d4db;border-radius:10px;padding:12px 16px}
+.top-bar h2{font-size:18px;font-weight:700;color:#111}
+button{cursor:pointer;font-family:system-ui,sans-serif;font-size:14px;border-radius:8px}
+.btn-p{background:#1a1a1a!important;color:#fff!important;border:none!important;padding:9px 20px;font-weight:600}
+.btn-p:hover{background:#333!important}
+.btn-s{background:#e8eaed!important;color:#111!important;border:1px solid #b0b4bc!important;padding:8px 16px;font-weight:500}
+.btn-s:hover{background:#d8dce3!important}
+.btn-d{background:#fde8e6!important;color:#b91c1c!important;border:1px solid #f5b7b1!important;padding:6px 12px;font-size:13px;font-weight:500}
+.btn-d:hover{background:#fbd5d1!important}
+.btn-tab{background:#e8eaed!important;color:#111!important;border:1px solid #b0b4bc!important;padding:8px 20px;font-weight:600}
+.btn-tab.active{background:#1a1a1a!important;color:#fff!important;border-color:#1a1a1a!important}
+.card{background:#fff;border:1px solid #d0d4db;border-radius:10px;padding:1.25rem;margin-bottom:1rem}
+.slabel{font-size:12px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid #eee}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:14px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:14px}
+.g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:14px}
+.f{display:flex;flex-direction:column;gap:6px}
+.f label{font-size:13px;color:#333;font-weight:600}
+.f input,.f select,.f textarea{height:40px;padding:0 12px;border:1px solid #b0b4bc;border-radius:8px;background:#fff;color:#111;font-size:15px;font-family:system-ui,sans-serif}
+.f textarea{height:60px;padding:8px 12px;resize:vertical}
+.f input:focus,.f select:focus,.f textarea:focus{outline:2px solid #1a1a1a;outline-offset:1px}
+.fro input{background:#f3f4f6!important;color:#555!important;font-weight:600}
+.chint{font-size:12px;color:#1d4ed8;margin-top:3px;font-weight:500}
+.er{font-size:13px;color:#b91c1c;margin-top:6px;min-height:16px;font-weight:500}
+.fa{display:flex;gap:10px;justify-content:flex-end;margin-top:1rem;padding-bottom:2rem}
+.nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.nu{display:flex;align-items:center;gap:8px;padding:6px 12px;border:1px solid #d0d4db;border-radius:8px;background:#f3f4f6}
+.nn{font-size:14px;font-weight:700;color:#111;line-height:1.3}
+.nr{font-size:12px;color:#666;line-height:1.3}
+.av{width:32px;height:32px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+.es{text-align:center;padding:3rem 1rem;color:#888;font-size:15px}
+.loading{text-align:center;padding:2rem;color:#888;font-size:14px}
+.lt{width:100%;border-collapse:collapse;font-size:13px}
+.lt th{text-align:left;padding:10px 11px;font-weight:700;color:#444;background:#f3f4f6;border-bottom:2px solid #d0d4db;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;white-space:nowrap}
+.lt td{padding:10px 11px;border-bottom:1px solid #eee;color:#111;vertical-align:middle;white-space:nowrap}
+.lt tr:hover td{background:#f9fafb}
+.lt tfoot td{padding:10px 11px;font-weight:700;background:#f3f4f6;border-top:2px solid #d0d4db;font-size:13px}
+.bdg{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700}
+.bi{background:#dbeafe;color:#1e40af}.bw{background:#fef9c3;color:#854d0e}
+.pos{color:#15803d!important}.neg{color:#b91c1c!important}
+.wo{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;z-index:200}
+.wo.open{display:flex}
+.wb{background:#fff;border:1px solid #d0d4db;border-radius:14px;padding:3rem 2.5rem;width:420px;max-width:92%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,0.2)}
+.wl{font-size:24px;font-weight:500;color:#111;margin-bottom:14px}
+.wl.big{font-size:36px;font-weight:700}
+.wl.last{margin-bottom:2.5rem;color:#444}
+.wbtn{height:46px;padding:0 2.5rem;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer}
+.wbtn:hover{background:#333}
+.ob{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);align-items:flex-start;justify-content:center;z-index:100;padding-top:40px}
+.ob.open{display:flex}
+.md{background:#fff;border:1px solid #d0d4db;border-radius:12px;padding:1.75rem;width:400px;max-width:92%;box-shadow:0 8px 30px rgba(0,0,0,0.15)}
+.md h3{font-size:17px;font-weight:700;margin-bottom:1rem;color:#111}
+.md .f{margin-bottom:12px}
+.md .f input,.md .f select{width:100%;height:40px;padding:0 12px;border:1px solid #b0b4bc;border-radius:8px;background:#fff;color:#111;font-size:15px;font-family:system-ui,sans-serif}
+.ma{display:flex;gap:8px;justify-content:flex-end;margin-top:1rem}
+.export-wrap{position:relative;display:inline-block}
+.export-menu{display:none;position:absolute;right:0;top:110%;background:#fff;border:1px solid #d0d4db;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:50;min-width:180px;overflow:hidden}
+.export-menu.open{display:block}
+.export-menu button{display:block;width:100%;text-align:left;padding:11px 16px;background:none;border:none;border-bottom:1px solid #f0f0f0;font-size:14px;color:#111;cursor:pointer;border-radius:0}
+.export-menu button:last-child{border-bottom:none}
+.export-menu button:hover{background:#f3f4f6}
+.fecha-filtro{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px}
+.fecha-filtro input,.fecha-filtro select{height:38px;padding:0 10px;border:1px solid #b0b4bc;border-radius:8px;background:#fff;color:#111;font-size:14px;font-family:system-ui,sans-serif}
+.tabs{display:flex;gap:8px;margin-bottom:1rem}
+#print-header{display:none;margin-bottom:12px}
+#print-header h2{font-size:18px;font-weight:700}
+#print-header p{font-size:12px;color:#555;margin-top:3px}
+#print-content{display:none}
+@media print{
+  @page{size:A4 landscape;margin:10mm}
+  body{background:#fff}
+  .app>*{display:none!important}
+  #view-main{display:block!important}
+  #view-main>*{display:none!important}
+  #print-header{display:block!important}
+  #print-content{display:block!important}
+  #print-content table{width:100%;border-collapse:collapse;font-size:8px}
+  #print-content th{background:#f3f4f6!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:4px 5px;border:1px solid #ccc;font-size:7px;text-transform:uppercase;font-weight:bold}
+  #print-content td{padding:4px 5px;border:1px solid #eee;font-size:8px}
+  button{display:none!important}
+}
+@media(max-width:700px){.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:1fr}.g2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="view active" id="view-main">
+    <div class="top-bar">
+      <h2>Control Anual</h2>
+      <div class="nav">
+        <div class="nu"><div class="av" id="nav-avatar">A</div><div style="display:flex;flex-direction:column"><span class="nn" id="nav-name">Admin</span><span class="nr" id="nav-role">Administrador</span></div></div>
+        <button class="btn-s" id="btn-couriers" onclick="showCouriers()">Couriers</button>
+        <div class="export-wrap">
+          <button class="btn-s" onclick="toggleExport(event)">Exportar ▾</button>
+          <div class="export-menu" id="export-menu">
+            <button onclick="doPrint()">🖨️ Imprimir (horizontal)</button>
+            <button onclick="doExcel()">📊 Descargar Excel</button>
+            <button onclick="doWord()">📝 Descargar Word</button>
+          </div>
+        </div>
+        <button class="btn-p" onclick="showFormReg()">+ Nuevo</button>
+        <button class="btn-s" onclick="doLogout()">Salir</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="btn-tab active" id="tab-reg" onclick="switchTab('reg')">📦 Registros</button>
+      <button class="btn-tab" id="tab-pag" onclick="switchTab('pag')">💰 Pagos</button>
+    </div>
+
+    <div id="panel-reg">
+      <div class="fecha-filtro">
+        <div style="display:flex;flex-direction:column;gap:4px"><label style="font-size:12px;font-weight:600;color:#333">Desde</label><input type="date" id="f-desde-r" onchange="renderReg()"></div>
+        <div style="display:flex;flex-direction:column;gap:4px"><label style="font-size:12px;font-weight:600;color:#333">Hasta</label><input type="date" id="f-hasta-r" onchange="renderReg()"></div>
+        <select id="f-tipo-r" onchange="renderReg()" style="height:38px;padding:0 12px;border:1px solid #b0b4bc;border-radius:8px;background:#fff;color:#111;font-size:14px"><option value="">Todos los tipos</option><option value="Aéreo">Aéreo</option><option value="Marítimo">Marítimo</option></select>
+        <input type="text" id="f-search-r" placeholder="Buscar guía, factura..." oninput="renderReg()" style="height:38px;padding:0 12px;border:1px solid #b0b4bc;border-radius:8px;background:#fff;color:#111;font-size:14px;min-width:180px">
+      </div>
+      <div id="print-header"><h2>Control Anual — Registros</h2><p id="print-subtitle"></p></div>
+      <div id="print-content"></div>
+      <div id="reg-container"><div class="loading">Cargando registros...</div></div>
+    </div>
+
+    <div id="panel-pag" style="display:none">
+      <div class="fecha-filtro">
+        <div style="display:flex;flex-direction:column;gap:4px"><label style="font-size:12px;font-weight:600;color:#333">Desde</label><input type="date" id="f-desde-p" onchange="renderPag()"></div>
+        <div style="display:flex;flex-direction:column;gap:4px"><label style="font-size:12px;font-weight:600;color:#333">Hasta</label><input type="date" id="f-hasta-p" onchange="renderPag()"></div>
+        <input type="text" id="f-search-p" placeholder="Buscar nota..." oninput="renderPag()" style="height:38px;padding:0 12px;border:1px solid #b0b4bc;border-radius:8px;background:#fff;color:#111;font-size:14px;min-width:180px">
+      </div>
+      <div id="pag-container"><div class="loading">Cargando pagos...</div></div>
+    </div>
+  </div>
+
+  <div class="view" id="view-login">
+    <div style="max-width:380px;margin:4rem auto;background:#fff;border:1px solid #d0d4db;border-radius:12px;padding:2.25rem">
+      <h2 style="font-size:22px;font-weight:700;margin-bottom:8px;color:#111">Control Anual</h2>
+      <p style="font-size:14px;color:#666;margin-bottom:1.5rem">Ingresa tus credenciales para continuar</p>
+      <div class="f" style="margin-bottom:14px"><label>Usuario</label><input type="text" id="l-user" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="f" style="margin-bottom:18px"><label>Contraseña</label><input type="password" id="l-pass" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <button class="btn-p" style="width:100%;height:44px;font-size:15px" onclick="doLogin()">Entrar</button>
+      <div class="er" id="login-error"></div>
+    </div>
+  </div>
+
+  <div class="view" id="view-sin-acceso">
+    <div style="max-width:420px;margin:4rem auto;background:#fff;border:1px solid #d0d4db;border-radius:12px;padding:2.5rem;text-align:center">
+      <div style="font-size:48px;margin-bottom:16px">🔒</div>
+      <h2 style="font-size:22px;font-weight:700;margin-bottom:8px;color:#111">Sin acceso</h2>
+      <p style="font-size:14px;color:#666;margin-bottom:24px">No tienes permiso para acceder a este sistema.</p>
+      <button class="btn-s" onclick="doLogout()">← Volver</button>
+    </div>
+  </div>
+
+  <div class="view" id="view-form-reg">
+    <div class="top-bar"><h2 id="form-reg-title">Nuevo registro</h2><button class="btn-s" onclick="showMain()">← Volver</button></div>
+    <div class="card"><div class="slabel">Datos generales</div>
+      <div class="g4">
+        <div class="f"><label>No. Guía</label><input type="text" id="r-guia"></div>
+        <div class="f"><label>Fecha</label><input type="date" id="r-fecha"></div>
+        <div class="f"><label>No. Factura</label><input type="text" id="r-factura"></div>
+        <div class="f"><label>Monto ($)</label><input type="number" id="r-monto" step="0.01" min="0" oninput="calcReg()"></div>
+      </div>
+      <div class="g3">
+        <div class="f"><label>Courier</label>
+          <select id="r-courier"><option value="">Seleccionar courier...</option></select>
+        </div>
+        <div class="f"><label>Tipo de envío</label>
+          <select id="r-tipo" onchange="onTipoChange()">
+            <option value="Aéreo">Aéreo</option>
+            <option value="Marítimo">Marítimo</option>
+          </select>
+        </div>
+        <div class="f"><label>Ciudad Origen</label><input type="text" id="r-origen"></div>
+      </div>
+      <div class="g2">
+        <div class="f"><label>Ciudad Destino</label><input type="text" id="r-destino"></div>
+      </div>
+    </div>
+
+    <div class="card" id="card-aereo">
+      <div class="slabel">Aéreo — Tarifas y medidas</div>
+      <div class="g3">
+        <div class="f"><label>Tarifa Peso ($/kg)</label><input type="number" id="r-tarifa-peso" step="0.01" min="0" oninput="calcReg()"></div>
+        <div class="f"><label>Tarifa Volumen ($/kg)</label><input type="number" id="r-tarifa-vol" step="0.01" min="0" oninput="calcReg()"></div>
+        <div class="f"><label>Peso (kg)</label><input type="number" id="r-peso" step="0.01" min="0" oninput="calcReg()"></div>
+      </div>
+      <div class="g3">
+        <div class="f"><label>Volumen (kg)</label><input type="number" id="r-volumen" step="0.01" min="0" oninput="calcReg()"></div>
+        <div class="f fro"><label>Valor Peso ($)</label><input type="number" id="r-val-peso" readonly><div class="chint" id="hint-peso"></div></div>
+        <div class="f fro"><label>Valor Volumen ($)</label><input type="number" id="r-val-vol" readonly><div class="chint" id="hint-vol"></div></div>
+      </div>
+    </div>
+
+    <div class="card" id="card-maritimo" style="display:none">
+      <div class="slabel">Marítimo — Tarifas y medidas</div>
+      <div class="g3">
+        <div class="f"><label>Tarifa P3 ($/p³)</label><input type="number" id="r-tarifa-p3" step="0.01" min="0" oninput="calcReg()"></div>
+        <div class="f"><label>P3 (pies³)</label><input type="number" id="r-p3" step="0.01" min="0" oninput="calcReg()"></div>
+        <div class="f fro"><label>Valor P3 ($)</label><input type="number" id="r-val-p3" readonly><div class="chint" id="hint-p3"></div></div>
+      </div>
+    </div>
+
+    <div class="card"><div class="slabel">Adicionales y totales</div>
+      <div class="g4">
+        <div class="f"><label>Adicional 1 ($)</label><input type="number" id="r-adic1" step="0.01" min="0" oninput="calcReg()"></div>
+        <div class="f"><label>Adicional 2 ($)</label><input type="number" id="r-adic2" step="0.01" min="0" oninput="calcReg()"></div>
+        <div class="f fro"><label>Total ($)</label><input type="number" id="r-total" readonly></div>
+        <div class="f fro"><label>Diferencial ($)</label><input type="number" id="r-dif" readonly></div>
+      </div>
+      <div class="g2">
+        <div class="f"><label>Fecha Conciliación</label><input type="date" id="r-fecha-conc"></div>
+        <div class="f"><label>Nota</label><input type="text" id="r-nota" placeholder="Opcional..."></div>
+      </div>
+    </div>
+    <div class="fa"><button class="btn-s" onclick="showMain()">Cancelar</button><button class="btn-p" id="btn-guardar-reg" onclick="guardarReg()">Guardar registro</button></div>
+  </div>
+
+  <div class="view" id="view-form-pag">
+    <div class="top-bar"><h2 id="form-pag-title">Nuevo pago</h2><button class="btn-s" onclick="showMain();switchTab('pag')">← Volver</button></div>
+    <div class="card"><div class="slabel">Datos del pago</div>
+      <div class="g2">
+        <div class="f"><label>Fecha</label><input type="date" id="p-fecha"></div>
+        <div class="f"><label>Monto de Pago ($)</label><input type="number" id="p-monto" step="0.01" min="0" oninput="calcPag()"></div>
+      </div>
+      <div class="g2">
+        <div class="f"><label>Monto Conciliado ($)</label><input type="number" id="p-conciliado" step="0.01" min="0" oninput="calcPag()"></div>
+        <div class="f fro"><label>Diferencial ($)</label><input type="number" id="p-dif" readonly></div>
+      </div>
+      <div class="f"><label>Nota</label><input type="text" id="p-nota" placeholder="Opcional..."></div>
+    </div>
+    <div class="fa"><button class="btn-s" onclick="showMain();switchTab('pag')">Cancelar</button><button class="btn-p" id="btn-guardar-pag" onclick="guardarPag()">Guardar pago</button></div>
+  </div>
+
+  <div class="view" id="view-couriers">
+    <div class="top-bar"><h2>Couriers</h2><div style="display:flex;gap:8px"><button class="btn-p" onclick="openAddCourier()">+ Agregar courier</button><button class="btn-s" onclick="showMain()">← Volver</button></div></div>
+    <div class="card"><div class="slabel">Couriers registrados</div><div id="couriers-list"></div></div>
+  </div>
+
+</div>
+
+<div class="wo" id="welcome-overlay">
+  <div class="wb">
+    <div class="wl">Bienvenido</div>
+    <div class="wl big" id="w-nombre">Admin</div>
+    <div class="wl last">Que tengas un excelente día</div>
+    <button class="wbtn" onclick="document.getElementById('welcome-overlay').classList.remove('open')">Continuar</button>
+  </div>
+</div>
+
+<div class="ob" id="modal-courier">
+  <div class="md">
+    <h3 id="modal-courier-title">Agregar courier</h3>
+    <div class="f"><label>Nombre del courier</label><input type="text" id="mc-nombre"></div>
+    <div class="f"><label>Ciudad</label><input type="text" id="mc-ciudad"></div>
+    <div class="er" id="modal-courier-error"></div>
+    <div class="ma"><button class="btn-s" onclick="closeModalCourier()">Cancelar</button><button class="btn-p" onclick="saveCourier()">Guardar</button></div>
+  </div>
+</div>
+
+<script>
+var SB_URL='https://vxmwojjkgtljkbdjihmh.supabase.co';
+var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4bXdvamprZ3RsamtiZGppaG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NDAyMDUsImV4cCI6MjA5MDIxNjIwNX0.caTMNi7kOcyJHjNSywbxiaIpwKFyeLdxJgiP5oRqu8U';
+
+async function db(path,method,body){
+  var h={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'};
+  var r=await fetch(SB_URL+'/rest/v1/'+path,{method:method||'GET',headers:h,body:body?JSON.stringify(body):undefined});
+  if(!r.ok)throw new Error(await r.text());
+  var t=await r.text();return t?JSON.parse(t):[];
+}
+
+var registros=[],pagos=[],couriers=[],currentUser=null,editingRegId=null,editingPagId=null,editingCourierId=null,currentTab='reg';
+function isAdmin(){return currentUser&&currentUser.rol==='admin';}
+function fmt(n){return '$'+(parseFloat(n)||0).toFixed(2);}
+function gv(id){var e=document.getElementById(id);return e?e.value:'';}
+function gn(id){return parseFloat(gv(id))||0;}
+
+function tieneAcceso(u){
+  if(!u)return false;
+  if(u.rol==='admin')return true;
+  if(!u.permisos||u.permisos==='todos')return true;
+  try{var p=JSON.parse(u.permisos);return p.indexOf('control-anual')>=0;}catch(e){return false;}
+}
+
+function showView(id){document.querySelectorAll('.app .view').forEach(function(v){v.classList.remove('active');});document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
+function refreshNav(){
+  if(!currentUser)return;
+  var ini=((currentUser.nombre[0]||'')+(currentUser.apellido[0]||'')).toUpperCase()||'?';
+  document.getElementById('nav-avatar').textContent=ini;
+  document.getElementById('nav-name').textContent=currentUser.nombre+(currentUser.apellido?' '+currentUser.apellido:'');
+  document.getElementById('nav-role').textContent=currentUser.rol==='admin'?'Administrador':'Usuario';
+  document.getElementById('btn-couriers').style.display=isAdmin()?'':'none';
+}
+function showWelcome(){document.getElementById('w-nombre').textContent=currentUser.nombre+(currentUser.apellido?' '+currentUser.apellido:'');document.getElementById('welcome-overlay').classList.add('open');}
+
+async function doLogin(){
+  var u=document.getElementById('l-user').value.trim(),p=document.getElementById('l-pass').value;
+  document.getElementById('login-error').textContent='Verificando...';
+  try{
+    var res=await db('usuarios?username=eq.'+encodeURIComponent(u)+'&password=eq.'+encodeURIComponent(p));
+    if(!res.length){document.getElementById('login-error').textContent='Usuario o contraseña incorrectos';return;}
+    currentUser=res[0];
+    if(!tieneAcceso(currentUser)){showView('view-sin-acceso');return;}
+    document.getElementById('login-error').textContent='';
+    document.getElementById('l-user').value='';document.getElementById('l-pass').value='';
+    refreshNav();
+    await loadAll();
+    showView('view-main');renderReg();showWelcome();
+  }catch(e){document.getElementById('login-error').textContent='Error de conexión.';}
+}
+
+function doLogout(){currentUser=null;showView('view-login');}
+
+async function loadAll(){
+  try{
+    couriers=await db('anual_couriers?order=nombre.asc');
+    registros=await db('anual_registros?order=created_at.desc');
+    pagos=await db('anual_pagos?order=created_at.desc');
+    populateCourierSelect();
+  }catch(e){console.error(e);}
+}
+
+function populateCourierSelect(){
+  var sel=document.getElementById('r-courier');
+  var val=sel.value;
+  sel.innerHTML='<option value="">Seleccionar courier...</option>';
+  couriers.forEach(function(c){
+    var o=document.createElement('option');o.value=c.id;o.textContent=c.nombre+(c.ciudad?' — '+c.ciudad:'');sel.appendChild(o);
+  });
+  if(val)sel.value=val;
+}
+
+function showMain(){showView('view-main');}
+function showCouriers(){renderCouriers();showView('view-couriers');}
+
+function switchTab(tab){
+  currentTab=tab;
+  document.getElementById('panel-reg').style.display=tab==='reg'?'':'none';
+  document.getElementById('panel-pag').style.display=tab==='pag'?'':'none';
+  document.getElementById('tab-reg').className='btn-tab'+(tab==='reg'?' active':'');
+  document.getElementById('tab-pag').className='btn-tab'+(tab==='pag'?' active':'');
+  // Change + button behavior
+  document.querySelector('.btn-p').onclick=tab==='reg'?function(){showFormReg();}:function(){showFormPag();};
+  document.querySelector('.btn-p').textContent=tab==='reg'?'+ Nuevo':'+ Pago';
+  if(tab==='pag')renderPag();
+}
+
+// COURIERS
+function openAddCourier(id){
+  editingCourierId=id||null;
+  if(id){var c=couriers.filter(function(x){return x.id===id;})[0];if(!c)return;
+    document.getElementById('modal-courier-title').textContent='Editar courier';
+    document.getElementById('mc-nombre').value=c.nombre;document.getElementById('mc-ciudad').value=c.ciudad||'';
+  }else{
+    document.getElementById('modal-courier-title').textContent='Agregar courier';
+    document.getElementById('mc-nombre').value='';document.getElementById('mc-ciudad').value='';
+  }
+  document.getElementById('modal-courier-error').textContent='';
+  document.getElementById('modal-courier').classList.add('open');
+}
+function closeModalCourier(){document.getElementById('modal-courier').classList.remove('open');}
+
+async function saveCourier(){
+  var nombre=document.getElementById('mc-nombre').value.trim(),ciudad=document.getElementById('mc-ciudad').value.trim();
+  if(!nombre){document.getElementById('modal-courier-error').textContent='El nombre es obligatorio';return;}
+  try{
+    if(editingCourierId)await db('anual_couriers?id=eq.'+editingCourierId,'PATCH',{nombre,ciudad});
+    else await db('anual_couriers','POST',{nombre,ciudad});
+    couriers=await db('anual_couriers?order=nombre.asc');
+    populateCourierSelect();closeModalCourier();renderCouriers();
+  }catch(e){document.getElementById('modal-courier-error').textContent='Error al guardar.';}
+}
+
+async function deleteCourier(id){
+  if(!confirm('¿Eliminar este courier?'))return;
+  try{await db('anual_couriers?id=eq.'+id,'DELETE');couriers=await db('anual_couriers?order=nombre.asc');populateCourierSelect();renderCouriers();}catch(e){alert('Error al eliminar.');}
+}
+
+function renderCouriers(){
+  if(!couriers.length){document.getElementById('couriers-list').innerHTML='<div class="es">No hay couriers. Agrega uno.</div>';return;}
+  var html='<table class="lt"><thead><tr><th>Nombre</th><th>Ciudad</th><th></th></tr></thead><tbody>';
+  couriers.forEach(function(c){
+    html+='<tr><td style="font-weight:600">'+c.nombre+'</td><td style="color:#555">'+( c.ciudad||'—')+'</td>'+
+      '<td style="display:flex;gap:6px"><button class="btn-s" style="font-size:13px;padding:5px 12px" onclick="openAddCourier(\''+c.id+'\')">Editar</button>'+
+      '<button class="btn-d" onclick="deleteCourier(\''+c.id+'\')">Eliminar</button></td></tr>';
+  });
+  html+='</tbody></table>';
+  document.getElementById('couriers-list').innerHTML=html;
+}
+
+// FORM REGISTRO
+function showFormReg(id){
+  editingRegId=id||null;
+  var r=id?registros.filter(function(x){return x.id===id;})[0]:null;
+  if(r){
+    document.getElementById('r-guia').value=r.no_guia||'';
+    document.getElementById('r-fecha').value=r.fecha||'';
+    document.getElementById('r-factura').value=r.numero_factura||'';
+    document.getElementById('r-monto').value=r.monto||'';
+    document.getElementById('r-courier').value=r.courier_id||'';
+    document.getElementById('r-tipo').value=r.tipo_envio||'Aéreo';
+    document.getElementById('r-origen').value=r.ciudad_origen||'';
+    document.getElementById('r-destino').value=r.ciudad_destino||'';
+    document.getElementById('r-tarifa-peso').value=r.tarifa_peso||'';
+    document.getElementById('r-tarifa-vol').value=r.tarifa_volumen||'';
+    document.getElementById('r-peso').value=r.peso||'';
+    document.getElementById('r-volumen').value=r.volumen||'';
+    document.getElementById('r-tarifa-p3').value=r.tarifa_p3||'';
+    document.getElementById('r-p3').value=r.p3||'';
+    document.getElementById('r-adic1').value=r.adicional1||'';
+    document.getElementById('r-adic2').value=r.adicional2||'';
+    document.getElementById('r-fecha-conc').value=r.fecha_conciliacion||'';
+    document.getElementById('r-nota').value=r.nota||'';
+    onTipoChange();
+  } else {
+    ['r-guia','r-factura','r-origen','r-destino','r-nota'].forEach(function(i){document.getElementById(i).value='';});
+    ['r-monto','r-tarifa-peso','r-tarifa-vol','r-peso','r-volumen','r-tarifa-p3','r-p3','r-adic1','r-adic2'].forEach(function(i){document.getElementById(i).value='';});
+    document.getElementById('r-fecha').value=new Date().toISOString().split('T')[0];
+    document.getElementById('r-fecha-conc').value='';
+    document.getElementById('r-tipo').value='Aéreo';
+    document.getElementById('r-courier').value='';
+    onTipoChange();
+  }
+  document.getElementById('form-reg-title').textContent=id?'Editar registro':'Nuevo registro';
+  showView('view-form-reg');calcReg();
+}
+
+function onTipoChange(){
+  var tipo=gv('r-tipo');
+  document.getElementById('card-aereo').style.display=tipo==='Aéreo'?'':'none';
+  document.getElementById('card-maritimo').style.display=tipo==='Marítimo'?'':'none';
+  calcReg();
+}
+
+function calcReg(){
+  var tipo=gv('r-tipo');
+  var monto=gn('r-monto');
+  var adic1=gn('r-adic1'),adic2=gn('r-adic2');
+  var total=0,valPeso=0,valVol=0,valP3=0;
+
+  if(tipo==='Aéreo'){
+    var tPeso=gn('r-tarifa-peso'),tVol=gn('r-tarifa-vol');
+    var peso=gn('r-peso'),vol=gn('r-volumen');
+    valPeso=tPeso*peso;
+    var difVol=vol>peso?vol-peso:0;
+    valVol=difVol>0?difVol*tVol:0;
+    total=valPeso+valVol+adic1+adic2;
+    document.getElementById('r-val-peso').value=valPeso.toFixed(2);
+    document.getElementById('hint-peso').textContent='Tarifa × '+peso.toFixed(2)+'kg';
+    document.getElementById('r-val-vol').value=valVol.toFixed(2);
+    document.getElementById('hint-vol').textContent=difVol>0?'Diferencial '+difVol.toFixed(2)+'kg × tarifa':'Sin diferencial de volumen';
+  } else {
+    var tP3=gn('r-tarifa-p3'),p3=gn('r-p3');
+    valP3=tP3*p3;
+    total=valP3+adic1+adic2;
+    document.getElementById('r-val-p3').value=valP3.toFixed(2);
+    document.getElementById('hint-p3').textContent='Tarifa × '+p3.toFixed(2)+'p³';
+  }
+
+  document.getElementById('r-total').value=total.toFixed(2);
+  var dif=monto-total;
+  document.getElementById('r-dif').value=dif.toFixed(2);
+}
+
+async function guardarReg(){
+  var bg=document.getElementById('btn-guardar-reg');bg.textContent='Guardando...';bg.disabled=true;
+  var courierSel=couriers.filter(function(c){return c.id===gv('r-courier');})[0];
+  var tipo=gv('r-tipo');
+  var peso=gn('r-peso'),vol=gn('r-volumen'),tPeso=gn('r-tarifa-peso'),tVol=gn('r-tarifa-vol');
+  var tP3=gn('r-tarifa-p3'),p3=gn('r-p3');
+  var valPeso=0,valVol=0,valP3=0;
+  if(tipo==='Aéreo'){valPeso=tPeso*peso;var dv=vol>peso?vol-peso:0;valVol=dv>0?dv*tVol:0;}
+  else{valP3=tP3*p3;}
+  var adic1=gn('r-adic1'),adic2=gn('r-adic2');
+  var total=tipo==='Aéreo'?valPeso+valVol+adic1+adic2:valP3+adic1+adic2;
+  var monto=gn('r-monto');
+  var r={no_guia:gv('r-guia'),fecha:gv('r-fecha'),numero_factura:gv('r-factura'),monto:monto,courier_id:gv('r-courier')||null,courier_nombre:courierSel?courierSel.nombre:'',tipo_envio:tipo,ciudad_origen:gv('r-origen'),ciudad_destino:gv('r-destino'),tarifa_peso:tPeso,tarifa_volumen:tVol,tarifa_p3:tP3,peso:peso,volumen:vol,p3:p3,valor_peso:valPeso,valor_volumen:valVol,valor_p3:valP3,adicional1:adic1,adicional2:adic2,total:total,diferencial:monto-total,fecha_conciliacion:gv('r-fecha-conc'),nota:gv('r-nota'),creado_por:currentUser?currentUser.username:''};
+  try{
+    if(editingRegId)await db('anual_registros?id=eq.'+editingRegId,'PATCH',r);
+    else await db('anual_registros','POST',r);
+    registros=await db('anual_registros?order=created_at.desc');
+    showMain();renderReg();
+  }catch(e){alert('Error al guardar: '+e.message);}
+  bg.textContent='Guardar registro';bg.disabled=false;
+}
+
+// FORM PAGO
+function showFormPag(id){
+  editingPagId=id||null;
+  var p=id?pagos.filter(function(x){return x.id===id;})[0]:null;
+  if(p){
+    document.getElementById('p-fecha').value=p.fecha||'';
+    document.getElementById('p-monto').value=p.monto_pago||'';
+    document.getElementById('p-conciliado').value=p.monto_conciliado||'';
+    document.getElementById('p-nota').value=p.nota||'';
+    calcPag();
+  } else {
+    document.getElementById('p-fecha').value=new Date().toISOString().split('T')[0];
+    document.getElementById('p-monto').value='';document.getElementById('p-conciliado').value='';document.getElementById('p-nota').value='';
+    document.getElementById('p-dif').value='';
+  }
+  document.getElementById('form-pag-title').textContent=id?'Editar pago':'Nuevo pago';
+  showView('view-form-pag');
+}
+
+function calcPag(){
+  var m=gn('p-monto'),c=gn('p-conciliado');
+  document.getElementById('p-dif').value=(m-c).toFixed(2);
+}
+
+async function guardarPag(){
+  var bg=document.getElementById('btn-guardar-pag');bg.textContent='Guardando...';bg.disabled=true;
+  var r={fecha:gv('p-fecha'),monto_pago:gn('p-monto'),monto_conciliado:gn('p-conciliado'),diferencial:gn('p-monto')-gn('p-conciliado'),nota:gv('p-nota'),creado_por:currentUser?currentUser.username:''};
+  try{
+    if(editingPagId)await db('anual_pagos?id=eq.'+editingPagId,'PATCH',r);
+    else await db('anual_pagos','POST',r);
+    pagos=await db('anual_pagos?order=created_at.desc');
+    showMain();switchTab('pag');
+  }catch(e){alert('Error al guardar: '+e.message);}
+  bg.textContent='Guardar pago';bg.disabled=false;
+}
+
+async function eliminarReg(id){
+  if(!isAdmin()){alert('Solo el admin puede eliminar.');return;}
+  if(!confirm('¿Eliminar este registro?'))return;
+  try{await db('anual_registros?id=eq.'+id,'DELETE');registros=await db('anual_registros?order=created_at.desc');renderReg();}catch(e){alert('Error.');}
+}
+
+async function eliminarPag(id){
+  if(!isAdmin()){alert('Solo el admin puede eliminar.');return;}
+  if(!confirm('¿Eliminar este pago?'))return;
+  try{await db('anual_pagos?id=eq.'+id,'DELETE');pagos=await db('anual_pagos?order=created_at.desc');renderPag();}catch(e){alert('Error.');}
+}
+
+function getFilteredReg(){
+  var q=(document.getElementById('f-search-r').value||'').toLowerCase();
+  var tipo=document.getElementById('f-tipo-r').value;
+  var desde=document.getElementById('f-desde-r').value;
+  var hasta=document.getElementById('f-hasta-r').value;
+  return registros.filter(function(r){
+    if(q&&(r.no_guia||'').toLowerCase().indexOf(q)<0&&(r.numero_factura||'').toLowerCase().indexOf(q)<0&&(r.courier_nombre||'').toLowerCase().indexOf(q)<0)return false;
+    if(tipo&&r.tipo_envio!==tipo)return false;
+    if(desde&&r.fecha&&r.fecha<desde)return false;
+    if(hasta&&r.fecha&&r.fecha>hasta)return false;
+    return true;
+  });
+}
+
+function getFilteredPag(){
+  var q=(document.getElementById('f-search-p').value||'').toLowerCase();
+  var desde=document.getElementById('f-desde-p').value;
+  var hasta=document.getElementById('f-hasta-p').value;
+  return pagos.filter(function(p){
+    if(q&&(p.nota||'').toLowerCase().indexOf(q)<0)return false;
+    if(desde&&p.fecha&&p.fecha<desde)return false;
+    if(hasta&&p.fecha&&p.fecha>hasta)return false;
+    return true;
+  });
+}
+
+function renderReg(){
+  var filtered=getFilteredReg();
+  var c=document.getElementById('reg-container');
+  if(!filtered.length){c.innerHTML='<div class="es">No hay registros. Clic en "+ Nuevo" para comenzar.</div>';return;}
+  var tMonto=0,tPeso=0,tVol=0,tDifVol=0,tP3=0,tTotal=0,tDif=0;
+  filtered.forEach(function(r){tMonto+=(r.monto||0);tPeso+=(r.peso||0);tVol+=(r.volumen||0);tP3+=(r.p3||0);tTotal+=(r.total||0);tDif+=(r.diferencial||0);
+    var dv=(r.volumen||0)>(r.peso||0)?(r.volumen||0)-(r.peso||0):0;tDifVol+=dv;
+  });
+  var html='<div style="overflow-x:auto;background:#fff;border:1px solid #d0d4db;border-radius:10px"><table class="lt"><thead><tr>'+
+    '<th>No. Guía</th><th>Fecha</th><th>Factura</th><th>Monto</th><th>Courier</th><th>Tipo</th><th>Origen</th><th>Destino</th>'+
+    '<th>Peso</th><th>Volumen</th><th>P3</th><th>Val.Peso</th><th>Val.Vol</th><th>Val.P3</th>'+
+    '<th>Adic.1</th><th>Adic.2</th><th>Total</th><th>Diferencial</th><th>F.Conc.</th><th>Nota</th><th></th>'+
+  '</tr></thead><tbody>';
+  filtered.forEach(function(r){
+    var dif=r.diferencial||0;
+    var dcol=dif>=0?'#15803d':'#b91c1c';
+    var tipoBdg=r.tipo_envio==='Aéreo'?'<span class="bdg bi">Aéreo</span>':'<span class="bdg bw">Marítimo</span>';
+    html+='<tr>'+
+      '<td style="font-weight:600">'+(r.no_guia||'—')+'</td>'+
+      '<td style="color:#555">'+(r.fecha||'—')+'</td>'+
+      '<td>'+(r.numero_factura||'—')+'</td>'+
+      '<td style="font-weight:700">'+fmt(r.monto)+'</td>'+
+      '<td>'+(r.courier_nombre||'—')+'</td>'+
+      '<td>'+tipoBdg+'</td>'+
+      '<td style="color:#555">'+(r.ciudad_origen||'—')+'</td>'+
+      '<td style="color:#555">'+(r.ciudad_destino||'—')+'</td>'+
+      '<td style="text-align:right">'+(r.peso||0)+'</td>'+
+      '<td style="text-align:right">'+(r.volumen||0)+'</td>'+
+      '<td style="text-align:right">'+(r.p3||0)+'</td>'+
+      '<td style="text-align:right">'+fmt(r.valor_peso)+'</td>'+
+      '<td style="text-align:right">'+fmt(r.valor_volumen)+'</td>'+
+      '<td style="text-align:right">'+fmt(r.valor_p3)+'</td>'+
+      '<td style="text-align:right">'+fmt(r.adicional1)+'</td>'+
+      '<td style="text-align:right">'+fmt(r.adicional2)+'</td>'+
+      '<td style="font-weight:700;text-align:right">'+fmt(r.total)+'</td>'+
+      '<td style="font-weight:700;color:'+dcol+';text-align:right">'+fmt(r.diferencial)+'</td>'+
+      '<td style="color:#555">'+(r.fecha_conciliacion||'—')+'</td>'+
+      '<td style="color:#888;max-width:120px;overflow:hidden;text-overflow:ellipsis">'+(r.nota||'—')+'</td>'+
+      '<td style="display:flex;gap:5px;white-space:nowrap">'+
+        '<button class="btn-s" style="font-size:12px;padding:4px 8px" onclick="showFormReg(\''+r.id+'\')">Editar</button>'+
+        (isAdmin()?'<button class="btn-d" onclick="eliminarReg(\''+r.id+'\')">Eliminar</button>':'')+
+      '</td>'+
+    '</tr>';
+  });
+  html+='<tfoot><tr>'+
+    '<td colspan="3">TOTALES ('+filtered.length+')</td>'+
+    '<td style="text-align:right">'+fmt(tMonto)+'</td>'+
+    '<td colspan="4"></td>'+
+    '<td style="text-align:right;font-weight:700">'+tPeso.toFixed(2)+'</td>'+
+    '<td style="text-align:right;font-weight:700">'+tVol.toFixed(2)+'</td>'+
+    '<td style="text-align:right;font-weight:700">'+tP3.toFixed(2)+'</td>'+
+    '<td colspan="3"></td>'+
+    '<td colspan="2"></td>'+
+    '<td style="text-align:right;font-weight:700">'+fmt(tTotal)+'</td>'+
+    '<td style="text-align:right;font-weight:700;color:'+(tDif>=0?'#15803d':'#b91c1c')+'">'+fmt(tDif)+'</td>'+
+    '<td colspan="3"></td>'+
+  '</tr></tfoot>';
+  html+='</tbody></table></div>';
+  c.innerHTML=html;
+}
+
+function renderPag(){
+  var filtered=getFilteredPag();
+  var c=document.getElementById('pag-container');
+  if(!filtered.length){c.innerHTML='<div class="es">No hay pagos. Clic en "+ Pago" para comenzar.</div>';return;}
+  var tPago=0,tConc=0,tDif=0;
+  filtered.forEach(function(p){tPago+=(p.monto_pago||0);tConc+=(p.monto_conciliado||0);tDif+=(p.diferencial||0);});
+  var html='<div style="overflow-x:auto;background:#fff;border:1px solid #d0d4db;border-radius:10px"><table class="lt"><thead><tr>'+
+    '<th>Fecha</th><th>Monto Pago</th><th>Monto Conciliado</th><th>Diferencial</th><th>Nota</th><th></th>'+
+  '</tr></thead><tbody>';
+  filtered.forEach(function(p){
+    var dif=p.diferencial||0;
+    html+='<tr>'+
+      '<td style="color:#555">'+(p.fecha||'—')+'</td>'+
+      '<td style="font-weight:700">'+fmt(p.monto_pago)+'</td>'+
+      '<td style="font-weight:700">'+fmt(p.monto_conciliado)+'</td>'+
+      '<td style="font-weight:700;color:'+(dif>=0?'#15803d':'#b91c1c')+'">'+fmt(dif)+'</td>'+
+      '<td style="color:#888">'+(p.nota||'—')+'</td>'+
+      '<td style="display:flex;gap:5px">'+
+        '<button class="btn-s" style="font-size:12px;padding:4px 8px" onclick="showFormPag(\''+p.id+'\')">Editar</button>'+
+        (isAdmin()?'<button class="btn-d" onclick="eliminarPag(\''+p.id+'\')">Eliminar</button>':'')+
+      '</td>'+
+    '</tr>';
+  });
+  html+='<tfoot><tr>'+
+    '<td>TOTALES ('+filtered.length+')</td>'+
+    '<td style="text-align:right;font-weight:700">'+fmt(tPago)+'</td>'+
+    '<td style="text-align:right;font-weight:700">'+fmt(tConc)+'</td>'+
+    '<td style="text-align:right;font-weight:700;color:'+(tDif>=0?'#15803d':'#b91c1c')+'">'+fmt(tDif)+'</td>'+
+    '<td colspan="2"></td>'+
+  '</tr></tfoot>';
+  html+='</tbody></table></div>';
+  c.innerHTML=html;
+}
+
+// EXPORTAR
+function toggleExport(e){e.stopPropagation();document.getElementById('export-menu').classList.toggle('open');}
+document.addEventListener('click',function(){var m=document.getElementById('export-menu');if(m)m.classList.remove('open');});
+
+function getSubtitle(){
+  var desde=currentTab==='reg'?document.getElementById('f-desde-r').value:document.getElementById('f-desde-p').value;
+  var hasta=currentTab==='reg'?document.getElementById('f-hasta-r').value:document.getElementById('f-hasta-p').value;
+  var parts=[];
+  if(desde)parts.push('Desde: '+desde);
+  if(hasta)parts.push('Hasta: '+hasta);
+  parts.push('Generado: '+new Date().toLocaleDateString('es-ES'));
+  return parts.join('  ·  ');
+}
+
+function buildPrintTableReg(data){
+  var html='<table style="width:100%;border-collapse:collapse;font-size:8px"><thead><tr style="background:#f3f4f6">';
+  ['No.Guía','Fecha','Factura','Monto','Courier','Tipo','Origen','Destino','Peso','Volumen','P3','Val.Peso','Val.Vol','Val.P3','Adic.1','Adic.2','Total','Diferencial','F.Conc','Nota'].forEach(function(h){
+    html+='<th style="padding:4px 5px;border:1px solid #ccc;text-align:left;font-size:7px;text-transform:uppercase">'+h+'</th>';
+  });
+  html+='</tr></thead><tbody>';
+  var tMonto=0,tPeso=0,tVol=0,tP3=0,tTotal=0,tDif=0;
+  data.forEach(function(r){
+    tMonto+=(r.monto||0);tPeso+=(r.peso||0);tVol+=(r.volumen||0);tP3+=(r.p3||0);tTotal+=(r.total||0);tDif+=(r.diferencial||0);
+    var dif=r.diferencial||0;
+    html+='<tr>'+
+      '<td style="padding:3px 5px;border:1px solid #eee;font-weight:600">'+(r.no_guia||'')+'</td>'+
+      '<td style="padding:3px 5px;border:1px solid #eee">'+(r.fecha||'')+'</td>'+
+      '<td style="padding:3px 5px;border:1px solid #eee">'+(r.numero_factura||'')+'</td>'+
+      '<td style="padding:3px 5px;border:1px solid #eee;text-align:right;font-weight:700">'+fmt(r.monto)+'</td>'+
+      '<td style="padding:3px 5px;border:1px solid #eee">'+(r.courier_nombre||'')+'</td>'+
+      '<td style="padding:3px 5px;border:1px solid #eee">'+(r.tipo_envio||'')+'</td>'+
+      '<td style="padding:3px 5px;border:1px solid #eee">'+(r.ciudad_origen||'')+'</td>'+
+      '<td style="padding:3px 5px;border:1px solid #eee">'+(r.ciudad_destino||'')+'</td>'+
+      '<td style="padding:3px 5px;border:1px solid #eee;text-align:right">'+(r.peso||0)+'</td>'+
+      '<td style="padding:3px 5px;border:1px solid #eee;text-align:right">'+(r.volumen||0)+'</td>'+
+      '<td style="padding:3px 5px;border:1px solid #eee;text-align:right">'+(r.p3||0)+'</td>'+
+      '<td style="padding:3px 5px;border:1px solid #eee;text-align:right">'+fmt(r.valor_peso)+'</td>'+
+      '<td style="padding:3px 5px;border:1px solid #eee;text-align:right">'+fmt(r.valor_volumen)+'</td>'+
+      '<td style="padding:3px 5px;border:1px solid #eee;text-align:right">'+fmt(r.valor_p3)+'</td>'+
+      '<td style="padding:3px 5px;border:1px solid #eee;text-align:right">'+fmt(r.adicional1)+'</td>'+
+      '<td style="padding:3px 5px;border:1px solid #eee;text-align:right">'+fmt(r.adicional2)+'</td>'+
+      '<td style="padding:3px 5px;border:1px solid #eee;text-align:right;font-weight:700">'+fmt(r.total)+'</td>'+
+      '<td style="padding:3px 5px;border:1px solid #eee;text-align:right;font-weight:700;color:'+(dif>=0?'#15803d':'#b91c1c')+'">'+fmt(dif)+'</td>'+
+      '<td style="padding:3px 5px;border:1px solid #eee">'+(r.fecha_conciliacion||'')+'</td>'+
+      '<td style="padding:3px 5px;border:1px solid #eee;color:#888">'+(r.nota||'')+'</td>'+
+    '</tr>';
+  });
+  html+='<tr style="background:#f3f4f6;font-weight:700">'+
+    '<td colspan="3" style="padding:4px 5px;border:1px solid #ccc">TOTALES ('+data.length+')</td>'+
+    '<td style="padding:4px 5px;border:1px solid #ccc;text-align:right">'+fmt(tMonto)+'</td>'+
+    '<td colspan="4" style="border:1px solid #ccc"></td>'+
+    '<td style="padding:4px 5px;border:1px solid #ccc;text-align:right">'+tPeso.toFixed(2)+'</td>'+
+    '<td style="padding:4px 5px;border:1px solid #ccc;text-align:right">'+tVol.toFixed(2)+'</td>'+
+    '<td style="padding:4px 5px;border:1px solid #ccc;text-align:right">'+tP3.toFixed(2)+'</td>'+
+    '<td colspan="5" style="border:1px solid #ccc"></td>'+
+    '<td style="padding:4px 5px;border:1px solid #ccc;text-align:right">'+fmt(tTotal)+'</td>'+
+    '<td style="padding:4px 5px;border:1px solid #ccc;text-align:right;color:'+(tDif>=0?'#15803d':'#b91c1c')+'">'+fmt(tDif)+'</td>'+
+    '<td colspan="2" style="border:1px solid #ccc"></td>'+
+  '</tr>';
+  html+='</tbody></table>';
+  return html;
+}
+
+function buildPrintTablePag(data){
+  var html='<table style="width:100%;border-collapse:collapse;font-size:9px"><thead><tr style="background:#f3f4f6">';
+  ['Fecha','Monto Pago','Monto Conciliado','Diferencial','Nota'].forEach(function(h){
+    html+='<th style="padding:4px 8px;border:1px solid #ccc;text-align:left;font-size:8px;text-transform:uppercase">'+h+'</th>';
+  });
+  html+='</tr></thead><tbody>';
+  var tPago=0,tConc=0,tDif=0;
+  data.forEach(function(p){
+    tPago+=(p.monto_pago||0);tConc+=(p.monto_conciliado||0);tDif+=(p.diferencial||0);
+    var dif=p.diferencial||0;
+    html+='<tr>'+
+      '<td style="padding:4px 8px;border:1px solid #eee">'+(p.fecha||'')+'</td>'+
+      '<td style="padding:4px 8px;border:1px solid #eee;text-align:right;font-weight:700">'+fmt(p.monto_pago)+'</td>'+
+      '<td style="padding:4px 8px;border:1px solid #eee;text-align:right;font-weight:700">'+fmt(p.monto_conciliado)+'</td>'+
+      '<td style="padding:4px 8px;border:1px solid #eee;text-align:right;font-weight:700;color:'+(dif>=0?'#15803d':'#b91c1c')+'">'+fmt(dif)+'</td>'+
+      '<td style="padding:4px 8px;border:1px solid #eee;color:#888">'+(p.nota||'')+'</td>'+
+    '</tr>';
+  });
+  html+='<tr style="background:#f3f4f6;font-weight:700">'+
+    '<td style="padding:4px 8px;border:1px solid #ccc">TOTALES ('+data.length+')</td>'+
+    '<td style="padding:4px 8px;border:1px solid #ccc;text-align:right">'+fmt(tPago)+'</td>'+
+    '<td style="padding:4px 8px;border:1px solid #ccc;text-align:right">'+fmt(tConc)+'</td>'+
+    '<td style="padding:4px 8px;border:1px solid #ccc;text-align:right;color:'+(tDif>=0?'#15803d':'#b91c1c')+'">'+fmt(tDif)+'</td>'+
+    '<td style="border:1px solid #ccc"></td>'+
+  '</tr>';
+  html+='</tbody></table>';
+  return html;
+}
+
+function doPrint(){
+  document.getElementById('export-menu').classList.remove('open');
+  var subtitle=getSubtitle();
+  document.getElementById('print-subtitle').textContent=subtitle;
+  document.getElementById('print-header').querySelector('h2').textContent='Control Anual — '+(currentTab==='reg'?'Registros':'Pagos');
+  var pc=document.getElementById('print-content');
+  if(currentTab==='reg'){pc.innerHTML=buildPrintTableReg(getFilteredReg());}
+  else{pc.innerHTML=buildPrintTablePag(getFilteredPag());}
+  pc.style.display='block';
+  window.print();
+  pc.style.display='none';
+}
+
+function doExcel(){
+  document.getElementById('export-menu').classList.remove('open');
+  var rows,data;
+  if(currentTab==='reg'){
+    data=getFilteredReg();
+    rows=[['No.Guia','Fecha','Factura','Monto','Courier','Tipo Envio','Ciudad Origen','Ciudad Destino','Tarifa Peso','Tarifa Volumen','Tarifa P3','Peso','Volumen','P3','Valor Peso','Valor Volumen','Valor P3','Adicional 1','Adicional 2','Total','Diferencial','Fecha Conciliacion','Nota','Creado por']];
+    data.forEach(function(r){rows.push([r.no_guia||'',r.fecha||'',r.numero_factura||'',r.monto||0,r.courier_nombre||'',r.tipo_envio||'',r.ciudad_origen||'',r.ciudad_destino||'',r.tarifa_peso||0,r.tarifa_volumen||0,r.tarifa_p3||0,r.peso||0,r.volumen||0,r.p3||0,r.valor_peso||0,r.valor_volumen||0,r.valor_p3||0,r.adicional1||0,r.adicional2||0,r.total||0,r.diferencial||0,r.fecha_conciliacion||'',r.nota||'',r.creado_por||'']);});
+    rows.push([]);
+    var tM=0,tP=0,tV=0,tP3=0,tT=0,tD=0;
+    data.forEach(function(r){tM+=(r.monto||0);tP+=(r.peso||0);tV+=(r.volumen||0);tP3+=(r.p3||0);tT+=(r.total||0);tD+=(r.diferencial||0);});
+    rows.push(['TOTALES',data.length,'','',tM,'','','','','','',tP,tV,tP3,'','','','','',tT,tD,'','','']);
+  } else {
+    data=getFilteredPag();
+    rows=[['Fecha','Monto Pago','Monto Conciliado','Diferencial','Nota','Creado por']];
+    data.forEach(function(p){rows.push([p.fecha||'',p.monto_pago||0,p.monto_conciliado||0,p.diferencial||0,p.nota||'',p.creado_por||'']);});
+    rows.push([]);
+    var tPg=0,tC=0,tDf=0;
+    data.forEach(function(p){tPg+=(p.monto_pago||0);tC+=(p.monto_conciliado||0);tDf+=(p.diferencial||0);});
+    rows.push(['TOTALES',tPg,tC,tDf,'','']);
+  }
+  var csv=rows.map(function(r){return r.map(function(c){return '"'+(String(c).replace(/"/g,'""'))+'"';}).join(',');}).join('\n');
+  var blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='control-anual-'+(currentTab==='reg'?'registros':'pagos')+'.csv';a.click();
+}
+
+function doWord(){
+  document.getElementById('export-menu').classList.remove('open');
+  var titulo='Control Anual — '+(currentTab==='reg'?'Registros':'Pagos');
+  var tabla=currentTab==='reg'?buildPrintTableReg(getFilteredReg()):buildPrintTablePag(getFilteredPag());
+  var html='<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;font-size:9pt}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:4px 6px;font-size:8pt}th{background:#f3f4f6;font-weight:bold;text-transform:uppercase;font-size:7pt}h2{font-size:14pt;margin-bottom:4pt}p{font-size:9pt;color:#666;margin-bottom:8pt}</style></head><body>';
+  html+='<h2>'+titulo+'</h2><p>'+getSubtitle()+'</p>'+tabla+'</body></html>';
+  var blob=new Blob([html],{type:'application/msword'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='control-anual-'+(currentTab==='reg'?'registros':'pagos')+'.doc';a.click();
+}
+
+showView('view-login');
+</script>
+</body>
+</html>
