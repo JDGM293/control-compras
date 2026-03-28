@@ -102,15 +102,19 @@ button{cursor:pointer;font-family:system-ui,sans-serif;font-size:14px;border-rad
 .fecha-filtro{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px}
 .fecha-filtro input,.fecha-filtro select{height:38px;padding:0 10px;border:1px solid #b0b4bc;border-radius:8px;background:#fff;color:#111;font-size:14px;font-family:system-ui,sans-serif}
 @media print{
-  @page{size:A4 landscape;margin:10mm}
-  .no-print{display:none!important}
-  body{background:#fff;font-size:10px}
-  .top-bar,.sr,.fecha-filtro,.card{display:none!important}
+  @page{size:A4 portrait;margin:12mm}
+  body{background:#fff}
+  .app > *{display:none!important}
+  #view-list{display:block!important}
+  #view-list > *{display:none!important}
   #print-header{display:block!important}
-  #print-all-content{display:block!important;font-size:9px}
-  #print-all-content table{width:100%;border-collapse:collapse;font-size:8px}
-  #print-all-content th{background:#f3f4f6!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:3px 4px;border:1px solid #ccc;font-size:7px;text-transform:uppercase}
-  #print-all-content td{padding:3px 4px;border:1px solid #eee;font-size:8px}
+  #print-all-content{display:block!important}
+  #print-all-content div{page-break-inside:avoid}
+  button{display:none!important}
+  a{color:#111!important;text-decoration:none!important}
+  span[style*="background"]{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  div[style*="background:#1a1a1a"]{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  div[style*="background:#f3f4f6"]{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
 #print-header{display:none;margin-bottom:12px}
 #print-header h2{font-size:18px;font-weight:700}
@@ -736,45 +740,50 @@ function doExcel(){
 }
 
 function buildFullTableCC(data){
-  var cols=['Cliente','Codigo','Fecha Compra','Sitio','Monto Compra','Tracking','WR Rec','Courier Rec','Paquetes','Fecha Rec','Ciudad','Tipo Envio','Peso','Peso Vol','Pies','Tarifa Env','Cargo Env','Total Env','WR Env','Courier Env','Medida Cobro','Tarifa Cobro','Cargo Cobro','Total Cobro','Cotizado','Abono','Tipo Abono','Fecha Abono','Restante','Tipo Rest','Fecha Rest','Notas','G.Compra','G.Envio','G.Total','Margen%','Estado','Creado por'];
-  var html='<table style="width:100%;border-collapse:collapse;font-size:8pt"><thead><tr style="background:#f3f4f6">';
-  cols.forEach(function(h){html+='<th style="text-align:left;padding:4px 6px;border:1px solid #ccc;font-size:7pt;text-transform:uppercase;white-space:nowrap">'+h+'</th>';});
-  html+='</tr></thead><tbody>';
-  data.forEach(function(r){
+  if(!data.length)return '<p style="color:#888">No hay registros.</p>';
+  var html='';
+  data.forEach(function(r,i){
     var cerrado=isCerrado(r);
     var gc=(r.gan_compra||0)>=0?'#15803d':'#b91c1c';
     var ge=(r.gan_envio||0)>=0?'#15803d':'#b91c1c';
     var gt=(r.gan_total||0)>=0?'#15803d':'#b91c1c';
-    function td(v,style){return '<td style="padding:4px 6px;border:1px solid #eee;'+(style||'')+'white-space:nowrap">'+(v||'')+'</td>';}
-    html+='<tr>'+
-      td(r.cliente,'font-weight:600;')+td(r.codigo,'color:#555;')+td(r.fecha_compra,'color:#555;')+td(r.sitio,'')+td(fmt(r.monto_compra),'text-align:right;')+
-      td(r.tracking,'')+td(r.wr_rec,'')+td(r.courier_rec,'')+td(r.paquetes,'')+td(r.fecha_rec,'color:#555;')+td(r.ciudad,'')+
-      td(r.tipo_envio,'')+td(r.peso,'text-align:right;')+td(r.peso_vol,'text-align:right;')+td(r.pies,'text-align:right;')+
-      td(fmt(r.tarifa_env),'text-align:right;')+td(fmt(r.cargo_env),'text-align:right;')+td(fmt(r.total_env),'text-align:right;font-weight:700;')+
-      td(r.wr_env,'')+td(r.courier_env,'')+
-      td(r.medida_cobro,'')+td(fmt(r.tarifa_cobro),'text-align:right;')+td(fmt(r.cargo_cobro),'text-align:right;')+td(fmt(r.total_cobro),'text-align:right;font-weight:700;')+
-      td(fmt(r.cotizado),'text-align:right;font-weight:700;')+td(fmt(r.abono),'text-align:right;')+td(r.tipo_abono,'')+td(r.fecha_abono,'color:#555;')+
-      td(fmt(r.restante),'text-align:right;')+td(r.tipo_rest,'')+td(r.fecha_rest,'color:#555;')+td(r.nota_pago,'')+
-      td(fmt(r.gan_compra),'color:'+gc+';font-weight:700;text-align:right;')+
-      td(fmt(r.gan_envio),'color:'+ge+';font-weight:700;text-align:right;')+
-      td(fmt(r.gan_total),'color:'+gt+';font-weight:700;text-align:right;')+
-      td((r.margen||0).toFixed(1)+'%','text-align:right;')+
-      td(cerrado?'Pagado':'Abierto','')+td(r.creado_por,'color:#888;')+
-    '</tr>';
+    function row(label,val){return '<tr><td style="padding:3px 8px;font-weight:600;color:#555;font-size:8px;white-space:nowrap;border-bottom:1px solid #f0f0f0;width:140px">'+label+'</td><td style="padding:3px 8px;font-size:9px;border-bottom:1px solid #f0f0f0">'+(val||'—')+'</td></tr>';}
+    function row2(l1,v1,l2,v2){return '<tr><td style="padding:3px 8px;font-weight:600;color:#555;font-size:8px;white-space:nowrap;border-bottom:1px solid #f0f0f0;width:140px">'+l1+'</td><td style="padding:3px 8px;font-size:9px;border-bottom:1px solid #f0f0f0;width:200px">'+(v1||'—')+'</td><td style="padding:3px 8px;font-weight:600;color:#555;font-size:8px;white-space:nowrap;border-bottom:1px solid #f0f0f0;width:140px">'+l2+'</td><td style="padding:3px 8px;font-size:9px;border-bottom:1px solid #f0f0f0">'+(v2||'—')+'</td></tr>';}
+    function sec(title){return '<tr><td colspan="4" style="padding:5px 8px;background:#1a1a1a;color:#fff;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em">'+title+'</td></tr>';}
+    html+='<div style="border:1px solid #ccc;border-radius:6px;margin-bottom:14px;overflow:hidden;page-break-inside:avoid">';
+    html+='<div style="background:#f3f4f6;padding:7px 10px;border-bottom:1px solid #ccc;display:flex;justify-content:space-between;align-items:center">';
+    html+='<span style="font-size:11px;font-weight:700;color:#111">Registro '+(i+1)+' — '+(r.cliente||'Sin nombre')+' — '+(r.codigo||'')+'</span>';
+    html+='<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:'+(cerrado?'#dcfce7':'#fef9c3')+';color:'+(cerrado?'#166534':'#854d0e')+'">'+(cerrado?'Pagado':'Abierto')+'</span>';
+    html+='</div>';
+    html+='<table style="width:100%;border-collapse:collapse">';
+    html+=sec('1 — Cliente');
+    html+=row2('Nombre',r.cliente,'Código',r.codigo);
+    html+=row2('Fecha compra',r.fecha_compra,'Sitio',r.sitio);
+    html+=row2('Monto compra',fmt(r.monto_compra),'Factura PDF',r.pdf_compra_name||'—');
+    html+=sec('2 — Recepción');
+    html+=row2('Tracking',r.tracking,'WR Recepción',r.wr_rec);
+    html+=row2('Courier',r.courier_rec,'Paquetes',r.paquetes);
+    html+=row2('Fecha recibido',r.fecha_rec,'Ciudad / País',r.ciudad);
+    html+=sec('3 — Envío (costos)');
+    html+=row2('Tipo envío',r.tipo_envio,'Peso',r.peso);
+    html+=row2('Peso vol.',r.peso_vol,'Pies³',r.pies);
+    html+=row2('Tarifa envío',fmt(r.tarifa_env),'Cargo adicional',fmt(r.cargo_env));
+    html+=row2('Total costo envío','<strong>'+fmt(r.total_env)+'</strong>','','');
+    html+=row2('WR envío',r.wr_env,'Courier envío',r.courier_env);
+    html+=row2('Factura envío PDF',r.pdf_envio_name||'—','','');
+    html+=sec('4 — Cobro al cliente');
+    html+=row2('Medida cobro',r.medida_cobro,'Tarifa cobro',fmt(r.tarifa_cobro));
+    html+=row2('Cargo adicional',fmt(r.cargo_cobro),'Total cobrado','<strong>'+fmt(r.total_cobro)+'</strong>');
+    html+=sec('5 — Pagos');
+    html+=row2('Cotizado','<strong>'+fmt(r.cotizado)+'</strong>','Abono',fmt(r.abono)+' ('+( r.tipo_abono||'')+')');
+    html+=row2('Fecha abono',r.fecha_abono,'Restante','<strong>'+fmt(r.restante)+'</strong>');
+    html+=row2('Tipo pago rest.',r.tipo_rest,'Fecha pago rest.',r.fecha_rest);
+    html+=row('Notas',r.nota_pago);
+    html+=sec('Resumen de ganancia');
+    html+=row2('G. por compra','<span style="color:'+gc+';font-weight:700">'+fmt(r.gan_compra)+'</span>','G. por envío','<span style="color:'+ge+';font-weight:700">'+fmt(r.gan_envio)+'</span>');
+    html+=row2('G. total','<span style="color:'+gt+';font-weight:700">'+fmt(r.gan_total)+'</span>','Margen',(r.margen||0).toFixed(1)+'%');
+    html+='</table></div>';
   });
-  // Totales
-  var tCot=0,tGC=0,tGE=0,tGT=0,tI=0;
-  data.forEach(function(r){tCot+=(r.cotizado||0);tGC+=(r.gan_compra||0);tGE+=(r.gan_envio||0);tGT+=(r.gan_total||0);tI+=(r.ingresos||0);});
-  var mp=tI>0?(tGT/tI*100):0;
-  html+='<tr style="background:#f3f4f6;font-weight:700"><td colspan="24" style="padding:5px 6px;border:1px solid #ccc">TOTALES ('+data.length+' registros)</td>'+
-    '<td style="padding:5px 6px;border:1px solid #ccc;text-align:right">'+fmt(tCot)+'</td>'+
-    '<td colspan="7" style="border:1px solid #ccc"></td>'+
-    '<td style="padding:5px 6px;border:1px solid #ccc;color:#15803d;text-align:right">'+fmt(tGC)+'</td>'+
-    '<td style="padding:5px 6px;border:1px solid #ccc;color:#15803d;text-align:right">'+fmt(tGE)+'</td>'+
-    '<td style="padding:5px 6px;border:1px solid #ccc;color:#15803d;text-align:right">'+fmt(tGT)+'</td>'+
-    '<td style="padding:5px 6px;border:1px solid #ccc;text-align:right">'+mp.toFixed(1)+'%</td>'+
-    '<td colspan="2" style="border:1px solid #ccc"></td></tr>';
-  html+='</tbody></table>';
   return html;
 }
 
