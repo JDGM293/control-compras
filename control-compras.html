@@ -93,6 +93,26 @@ button{cursor:pointer;font-family:system-ui,sans-serif;font-size:14px;border-rad
 .wbtn{height:46px;padding:0 2.5rem;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer}
 .wbtn:hover{background:#333}
 .loading{text-align:center;padding:2rem;color:#888;font-size:14px}
+.export-wrap{position:relative;display:inline-block}
+.export-menu{display:none;position:absolute;right:0;top:110%;background:#fff;border:1px solid #d0d4db;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:50;min-width:180px;overflow:hidden}
+.export-menu.open{display:block}
+.export-menu button{display:block;width:100%;text-align:left;padding:11px 16px;background:none;border:none;border-bottom:1px solid #f0f0f0;font-size:14px;color:#111;cursor:pointer;border-radius:0}
+.export-menu button:last-child{border-bottom:none}
+.export-menu button:hover{background:#f3f4f6}
+.fecha-filtro{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px}
+.fecha-filtro input,.fecha-filtro select{height:38px;padding:0 10px;border:1px solid #b0b4bc;border-radius:8px;background:#fff;color:#111;font-size:14px;font-family:system-ui,sans-serif}
+@media print{
+  @page{size:A4 landscape;margin:12mm}
+  .no-print{display:none!important}
+  body{background:#fff;font-size:11px}
+  .top-bar,.sr,.fecha-filtro{display:none!important}
+  .card{border:none;padding:0;margin-bottom:8px}
+  .lt th{background:#f3f4f6!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #print-header{display:block!important}
+}
+#print-header{display:none;margin-bottom:12px}
+#print-header h2{font-size:18px;font-weight:700}
+#print-header p{font-size:12px;color:#555;margin-top:3px}
 @media(max-width:600px){.g3{grid-template-columns:1fr}.g2{grid-template-columns:1fr}.g4{grid-template-columns:repeat(2,1fr)}.nav{gap:6px}}
 </style>
 </head>
@@ -104,11 +124,23 @@ button{cursor:pointer;font-family:system-ui,sans-serif;font-size:14px;border-rad
       <div class="nav">
         <div class="nu"><div class="av" id="nav-avatar">A</div><div style="display:flex;flex-direction:column"><span class="nn" id="nav-name">Admin</span><span class="nr" id="nav-role">Administrador</span></div></div>
         <button class="btn-s" id="btn-usuarios" onclick="showUsers()">Usuarios</button>
-        <button class="btn-i" onclick="showPrint()">Imprimir</button>
+        <div class="export-wrap">
+          <button class="btn-s" onclick="toggleExport(event)">Exportar ▾</button>
+          <div class="export-menu" id="export-menu">
+            <button onclick="doPrint()">🖨️ Imprimir (horizontal)</button>
+            <button onclick="doExcel()">📊 Descargar Excel</button>
+            <button onclick="doWord()">📝 Descargar Word</button>
+          </div>
+        </div>
         <button class="btn-p" onclick="showForm()">+ Nuevo</button>
         <button class="btn-s" onclick="doLogout()">Salir</button>
       </div>
     </div>
+    <div class="fecha-filtro no-print">
+      <div style="display:flex;flex-direction:column;gap:4px"><label style="font-size:12px;font-weight:600;color:#333">Desde</label><input type="date" id="f-desde" onchange="renderList()"></div>
+      <div style="display:flex;flex-direction:column;gap:4px"><label style="font-size:12px;font-weight:600;color:#333">Hasta</label><input type="date" id="f-hasta" onchange="renderList()"></div>
+    </div>
+    <div id="print-header"><h2>Control de Compras</h2><p id="print-subtitle"></p></div>
     <div class="sr">
       <input type="text" id="search-input" placeholder="Buscar por cliente o código..." oninput="renderList()">
       <select id="filter-tipo" onchange="renderList()"><option value="">Todos los tipos</option><option value="Aéreo">Aéreo</option><option value="Marítimo">Marítimo</option></select>
@@ -544,6 +576,92 @@ function renderPrint(){
   html+='<div class="card"><div style="overflow-x:auto"><table class="lt"><thead><tr><th>Cliente</th><th>Código</th><th>Fecha</th><th>Tipo</th><th>Estado</th><th>Cotizado</th><th>G. Compra</th><th>G. Envío</th><th>G. Total</th><th>Margen</th></tr></thead><tbody>';
   f.forEach(function(r){var gc=(r.gan_compra||0)>=0?'#15803d':'#b91c1c',ge=(r.gan_envio||0)>=0?'#15803d':'#b91c1c',gt=(r.gan_total||0)>=0?'#15803d':'#b91c1c';html+='<tr><td>'+(r.cliente||'—')+'</td><td style="color:#555">'+(r.codigo||'—')+'</td><td style="color:#555">'+(r.fecha_compra||'—')+'</td><td>'+(r.tipo_envio||'—')+'</td><td>'+(isCerrado(r)?'Pagado':'Abierto')+'</td><td style="font-weight:600">'+fmt(r.cotizado)+'</td><td style="color:'+gc+';font-weight:600">'+fmt(r.gan_compra)+'</td><td style="color:'+ge+';font-weight:600">'+fmt(r.gan_envio)+'</td><td style="color:'+gt+';font-weight:700">'+fmt(r.gan_total)+'</td><td>'+(r.margen||0).toFixed(1)+'%</td></tr>';});
   html+='</tbody></table></div></div>';document.getElementById('print-results').innerHTML=html;
+}
+
+
+// EXPORTAR
+function toggleExport(e){e.stopPropagation();document.getElementById('export-menu').classList.toggle('open');}
+document.addEventListener('click',function(){var m=document.getElementById('export-menu');if(m)m.classList.remove('open');});
+
+function getFilteredCC(){
+  var q=(document.getElementById('search-input').value||'').toLowerCase();
+  var tipo=document.getElementById('filter-tipo').value;
+  var estado=document.getElementById('filter-estado').value;
+  var desde=document.getElementById('f-desde').value;
+  var hasta=document.getElementById('f-hasta').value;
+  return records.filter(function(r){
+    if(q&&(r.cliente||'').toLowerCase().indexOf(q)<0&&(r.codigo||'').toLowerCase().indexOf(q)<0)return false;
+    if(tipo&&r.tipo_envio!==tipo)return false;
+    if(estado==='cerrado'&&!isCerrado(r))return false;
+    if(estado==='abierto'&&isCerrado(r))return false;
+    if(desde&&r.fecha_compra&&r.fecha_compra<desde)return false;
+    if(hasta&&r.fecha_compra&&r.fecha_compra>hasta)return false;
+    return true;
+  });
+}
+
+function getSubtitleCC(){
+  var desde=document.getElementById('f-desde').value,hasta=document.getElementById('f-hasta').value;
+  var parts=[];
+  if(desde)parts.push('Desde: '+desde);
+  if(hasta)parts.push('Hasta: '+hasta);
+  parts.push('Generado: '+new Date().toLocaleDateString('es-ES'));
+  return parts.join('  ·  ');
+}
+
+function buildResumenCC(data){
+  var tCot=0,tGC=0,tGE=0,tGT=0,tI=0;
+  data.forEach(function(r){tCot+=(r.cotizado||0);tGC+=(r.gan_compra||0);tGE+=(r.gan_envio||0);tGT+=(r.gan_total||0);tI+=(r.ingresos||0);});
+  var mp=tI>0?(tGT/tI*100):0;
+  return '<table style="border-collapse:collapse;font-size:12px;margin-bottom:14px"><tr>'+
+    [['Registros',data.length],['Cotizado',fmt(tCot)],['G.Compra',fmt(tGC)],['G.Envio',fmt(tGE)],['G.Total',fmt(tGT)],['Margen',mp.toFixed(1)+'%']].map(function(x){
+      return '<td style="padding:6px 14px;border:1px solid #ddd;text-align:center"><div style="font-size:10px;font-weight:700;color:#555;text-transform:uppercase">'+x[0]+'</div><div style="font-size:15px;font-weight:700">'+x[1]+'</div></td>';
+    }).join('')+'</tr></table>';
+}
+
+function buildTableCC(data){
+  if(!data.length)return '<p style="color:#888">No hay registros.</p>';
+  var html='<table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr style="background:#f3f4f6">';
+  ['Cliente','Codigo','Fecha','Tipo','Estado','Cotizado','G.Compra','G.Envio','G.Total','Margen%'].forEach(function(h){html+='<th style="text-align:left;padding:6px 8px;border:1px solid #ddd;font-size:10px;text-transform:uppercase">'+h+'</th>';});
+  html+='</tr></thead><tbody>';
+  data.forEach(function(r){
+    var cerrado=isCerrado(r);
+    var gc=(r.gan_compra||0)>=0?'#15803d':'#b91c1c',ge=(r.gan_envio||0)>=0?'#15803d':'#b91c1c',gt=(r.gan_total||0)>=0?'#15803d':'#b91c1c';
+    html+='<tr><td style="padding:6px 8px;border:1px solid #eee;font-weight:600">'+(r.cliente||'')+'</td><td style="padding:6px 8px;border:1px solid #eee;color:#555">'+(r.codigo||'')+'</td><td style="padding:6px 8px;border:1px solid #eee;color:#555">'+(r.fecha_compra||'')+'</td><td style="padding:6px 8px;border:1px solid #eee">'+(r.tipo_envio||'')+'</td><td style="padding:6px 8px;border:1px solid #eee">'+(cerrado?'Pagado':'Abierto')+'</td><td style="padding:6px 8px;border:1px solid #eee;font-weight:700">'+fmt(r.cotizado)+'</td><td style="padding:6px 8px;border:1px solid #eee;color:'+gc+';font-weight:700">'+fmt(r.gan_compra)+'</td><td style="padding:6px 8px;border:1px solid #eee;color:'+ge+';font-weight:700">'+fmt(r.gan_envio)+'</td><td style="padding:6px 8px;border:1px solid #eee;color:'+gt+';font-weight:700">'+fmt(r.gan_total)+'</td><td style="padding:6px 8px;border:1px solid #eee">'+(r.margen||0).toFixed(1)+'%</td></tr>';
+  });
+  html+='</tbody></table>';return html;
+}
+
+function doPrint(){
+  document.getElementById('export-menu').classList.remove('open');
+  document.getElementById('print-subtitle').textContent=getSubtitleCC();
+  window.print();
+}
+
+function doExcel(){
+  document.getElementById('export-menu').classList.remove('open');
+  var filtered=getFilteredCC();
+  var rows=[['Cliente','Codigo','Fecha','Sitio','Monto Compra','Tracking','Tipo Envio','Peso','Pies','Total Envio','Total Cobro','Cotizado','Abono','Restante','G.Compra','G.Envio','G.Total','Margen%','Estado','Creado por']];
+  filtered.forEach(function(r){rows.push([r.cliente||'',r.codigo||'',r.fecha_compra||'',r.sitio||'',r.monto_compra||0,r.tracking||'',r.tipo_envio||'',r.peso||0,r.pies||0,r.total_env||0,r.total_cobro||0,r.cotizado||0,r.abono||0,r.restante||0,r.gan_compra||0,r.gan_envio||0,r.gan_total||0,(r.margen||0).toFixed(1),(isCerrado(r)?'Pagado':'Abierto'),r.creado_por||'']);});
+  rows.push([]);rows.push(['RESUMEN']);
+  var tCot=0,tGC=0,tGE=0,tGT=0,tI=0;
+  filtered.forEach(function(r){tCot+=(r.cotizado||0);tGC+=(r.gan_compra||0);tGE+=(r.gan_envio||0);tGT+=(r.gan_total||0);tI+=(r.ingresos||0);});
+  rows.push(['Total registros',filtered.length,'Cotizado',tCot,'G.Compra',tGC,'G.Envio',tGE,'G.Total',tGT,'Margen',tI>0?(tGT/tI*100).toFixed(1)+'%':'']);
+  var csv=rows.map(function(r){return r.map(function(c){return '"'+(String(c).replace(/"/g,'""'))+'"';}).join(',');}).join('\n');
+  var blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='control-compras.csv';a.click();
+}
+
+function doWord(){
+  document.getElementById('export-menu').classList.remove('open');
+  var filtered=getFilteredCC();
+  var html='<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;font-size:10pt}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:5px 7px;font-size:9pt}th{background:#f3f4f6;font-weight:bold;text-transform:uppercase;font-size:8pt}h2{font-size:16pt;margin-bottom:4pt}p{font-size:10pt;color:#666;margin-bottom:10pt}</style></head><body>';
+  html+='<h2>Control de Compras</h2><p>'+getSubtitleCC()+'</p>';
+  html+=buildResumenCC(filtered);
+  html+=buildTableCC(filtered);
+  html+='</body></html>';
+  var blob=new Blob([html],{type:'application/msword'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='control-compras.doc';a.click();
 }
 
 showView('view-login');
