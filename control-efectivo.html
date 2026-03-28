@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control de Efectivo</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;font-size:15px;background:#f0f2f5;color:#111}
+.app{padding:12px}
+.view{display:none}.view.active{display:block}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:10px;background:#fff;border:1px solid #d0d4db;border-radius:10px;padding:12px 16px}
+.top-bar h2{font-size:18px;font-weight:700;color:#111}
+button{cursor:pointer;font-family:system-ui,sans-serif;font-size:14px;border-radius:8px}
+.btn-p{background:#1a1a1a!important;color:#fff!important;border:none!important;padding:9px 20px;font-weight:600}
+.btn-p:hover{background:#333!important}
+.btn-s{background:#e8eaed!important;color:#111!important;border:1px solid #b0b4bc!important;padding:8px 16px;font-weight:500}
+.btn-s:hover{background:#d8dce3!important}
+.btn-d{background:#fde8e6!important;color:#b91c1c!important;border:1px solid #f5b7b1!important;padding:6px 12px;font-size:13px;font-weight:500}
+.btn-d:hover{background:#fbd5d1!important}
+.card{background:#fff;border:1px solid #d0d4db;border-radius:10px;padding:1.25rem;margin-bottom:1rem}
+.slabel{font-size:12px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid #eee}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:14px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:14px}
+.g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:10px}
+.f{display:flex;flex-direction:column;gap:6px}
+.f label{font-size:13px;color:#333;font-weight:600}
+.f input,.f select,.f textarea{height:40px;padding:0 12px;border:1px solid #b0b4bc;border-radius:8px;background:#fff;color:#111;font-size:15px;font-family:system-ui,sans-serif}
+.f textarea{height:72px;padding:10px 12px;resize:vertical}
+.f input:focus,.f select:focus,.f textarea:focus{outline:2px solid #1a1a1a;outline-offset:1px}
+.er{font-size:13px;color:#b91c1c;margin-top:6px;min-height:16px;font-weight:500}
+.nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.nu{display:flex;align-items:center;gap:8px;padding:6px 12px;border:1px solid #d0d4db;border-radius:8px;background:#f3f4f6}
+.nn{font-size:14px;font-weight:700;color:#111;line-height:1.3}
+.nr{font-size:12px;color:#666;line-height:1.3}
+.av{width:32px;height:32px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+.es{text-align:center;padding:3rem 1rem;color:#888;font-size:15px}
+.loading{text-align:center;padding:2rem;color:#888;font-size:14px}
+.lt{width:100%;border-collapse:collapse;font-size:14px}
+.lt th{text-align:left;padding:11px 13px;font-weight:700;color:#444;background:#f3f4f6;border-bottom:2px solid #d0d4db;font-size:12px;text-transform:uppercase;letter-spacing:0.05em}
+.lt td{padding:11px 13px;border-bottom:1px solid #eee;color:#111;vertical-align:middle}
+.lt tr:hover td{background:#f9fafb}
+.bdg{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700}
+.bi{background:#dbeafe;color:#1e40af}
+.bs{background:#dcfce7;color:#166534}
+.br{background:#fde8e6;color:#b91c1c}
+.by{background:#fef9c3;color:#854d0e}
+.bp{background:#f3e8ff;color:#6b21a8}
+.saldo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:1rem}
+.saldo-card{background:#fff;border:1px solid #d0d4db;border-radius:10px;padding:1.25rem}
+.saldo-moneda{font-size:12px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px}
+.saldo-valor{font-size:28px;font-weight:700}
+.saldo-sub{font-size:12px;color:#888;margin-top:4px}
+.pos{color:#15803d!important}.neg{color:#b91c1c!important}
+.fa{display:flex;gap:10px;justify-content:flex-end;margin-top:1rem;padding-bottom:2rem}
+.sr{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.sr input{flex:1;min-width:160px;height:40px;padding:0 13px;border:1px solid #b0b4bc;border-radius:8px;background:#fff;color:#111;font-size:15px;font-family:system-ui,sans-serif}
+.sr select{height:40px;padding:0 12px;border:1px solid #b0b4bc;border-radius:8px;background:#fff;color:#111;font-size:15px;font-family:system-ui,sans-serif}
+.wo{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;z-index:200}
+.wo.open{display:flex}
+.wb{background:#fff;border:1px solid #d0d4db;border-radius:14px;padding:3rem 2.5rem;width:420px;max-width:92%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,0.2)}
+.wl{font-size:24px;font-weight:500;color:#111;margin-bottom:14px}
+.wl.big{font-size:36px;font-weight:700}
+.wl.last{margin-bottom:2.5rem;color:#444}
+.wbtn{height:46px;padding:0 2.5rem;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer}
+.wbtn:hover{background:#333}
+.ing-row td:first-child{border-left:3px solid #15803d}
+.egr-row td:first-child{border-left:3px solid #b91c1c}
+@media(max-width:700px){.g3{grid-template-columns:1fr}.g2{grid-template-columns:1fr}.g4{grid-template-columns:repeat(2,1fr)}.nav{gap:6px}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="view active" id="view-list">
+    <div class="top-bar">
+      <h2>Control de Efectivo</h2>
+      <div class="nav">
+        <div class="nu"><div class="av" id="nav-avatar">A</div><div style="display:flex;flex-direction:column"><span class="nn" id="nav-name">Admin</span><span class="nr" id="nav-role">Administrador</span></div></div>
+        <button class="btn-p" onclick="showForm()">+ Movimiento</button>
+        <button class="btn-s" onclick="doLogout()">Salir</button>
+      </div>
+    </div>
+    <div class="saldo-grid" id="saldos-container"></div>
+    <div class="card">
+      <div class="slabel">Historial de movimientos</div>
+      <div class="sr">
+        <input type="text" id="search-input" placeholder="Buscar por nombre o concepto..." oninput="renderList()">
+        <select id="filter-tipo" onchange="renderList()"><option value="">Ingreso / Egreso</option><option value="Ingreso">Ingresos</option><option value="Egreso">Egresos</option></select>
+        <select id="filter-moneda" onchange="renderList()"><option value="">Todas las monedas</option><option value="$">Dólares ($)</option><option value="Bs.">Bolívares (Bs.)</option><option value="€">Euros (€)</option></select>
+      </div>
+      <div id="list-container"><div class="loading">Cargando movimientos...</div></div>
+    </div>
+  </div>
+
+  <div class="view" id="view-login">
+    <div style="max-width:380px;margin:4rem auto;background:#fff;border:1px solid #d0d4db;border-radius:12px;padding:2.25rem">
+      <h2 style="font-size:22px;font-weight:700;margin-bottom:8px;color:#111">Control de Efectivo</h2>
+      <p style="font-size:14px;color:#666;margin-bottom:1.5rem">Ingresa tus credenciales para continuar</p>
+      <div class="f" style="margin-bottom:14px"><label>Usuario</label><input type="text" id="l-user" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="f" style="margin-bottom:18px"><label>Contraseña</label><input type="password" id="l-pass" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <button class="btn-p" style="width:100%;height:44px;font-size:15px" onclick="doLogin()">Entrar</button>
+      <div class="er" id="login-error"></div>
+    </div>
+  </div>
+
+  <div class="view" id="view-form">
+    <div class="top-bar"><h2 id="form-title">Nuevo movimiento</h2><button class="btn-s" onclick="showList()">← Volver</button></div>
+    <div class="card">
+      <div class="slabel">Datos del movimiento</div>
+      <div class="g3">
+        <div class="f"><label>Usuario</label><input type="text" id="f-usuario" placeholder="Nombre del usuario..."></div>
+        <div class="f"><label>Fecha</label><input type="date" id="f-fecha"></div>
+        <div class="f"><label>Ingreso o Egreso</label>
+          <select id="f-tipo">
+            <option value="Ingreso">↑ Ingreso</option>
+            <option value="Egreso">↓ Egreso</option>
+          </select>
+        </div>
+      </div>
+      <div class="g3">
+        <div class="f"><label>Moneda</label>
+          <select id="f-moneda">
+            <option value="$">Dólares ($)</option>
+            <option value="Bs.">Bolívares (Bs.)</option>
+            <option value="€">Euros (€)</option>
+          </select>
+        </div>
+        <div class="f"><label>Monto</label><input type="number" id="f-monto" step="0.01" min="0" placeholder="0.00"></div>
+        <div class="f"><label>Nombre (referencia)</label><input type="text" id="f-nombre" placeholder="Ej: cliente, proveedor..."></div>
+      </div>
+      <div class="g2">
+        <div class="f"><label>Concepto</label><input type="text" id="f-concepto" placeholder="Descripción del movimiento..."></div>
+        <div class="f"><label>Notas</label><input type="text" id="f-notas" placeholder="Opcional..."></div>
+      </div>
+    </div>
+    <div class="fa">
+      <button class="btn-s" onclick="showList()">Cancelar</button>
+      <button class="btn-p" id="btn-guardar" onclick="guardar()">Guardar movimiento</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="wo" id="welcome-overlay">
+  <div class="wb">
+    <div class="wl">Bienvenido</div>
+    <div class="wl big" id="w-nombre">Admin</div>
+    <div class="wl last">Que tengas un excelente día</div>
+    <button class="wbtn" onclick="document.getElementById('welcome-overlay').classList.remove('open')">Continuar</button>
+  </div>
+</div>
+
+<script>
+var SB_URL='https://vxmwojjkgtljkbdjihmh.supabase.co';
+var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4bXdvamprZ3RsamtiZGppaG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NDAyMDUsImV4cCI6MjA5MDIxNjIwNX0.caTMNi7kOcyJHjNSywbxiaIpwKFyeLdxJgiP5oRqu8U';
+
+async function db(path,method,body){
+  var h={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'};
+  var r=await fetch(SB_URL+'/rest/v1/'+path,{method:method||'GET',headers:h,body:body?JSON.stringify(body):undefined});
+  if(!r.ok)throw new Error(await r.text());
+  var t=await r.text();return t?JSON.parse(t):[];
+}
+
+var movimientos=[],currentUser=null,editingId=null;
+function isAdmin(){return currentUser&&currentUser.rol==='admin';}
+
+function showView(id){document.querySelectorAll('.app .view').forEach(function(v){v.classList.remove('active');});document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
+
+function refreshNav(){
+  if(!currentUser)return;
+  var ini=((currentUser.nombre[0]||'')+(currentUser.apellido[0]||'')).toUpperCase()||'?';
+  document.getElementById('nav-avatar').textContent=ini;
+  document.getElementById('nav-name').textContent=currentUser.nombre+(currentUser.apellido?' '+currentUser.apellido:'');
+  document.getElementById('nav-role').textContent=currentUser.rol==='admin'?'Administrador':'Usuario';
+}
+
+function showWelcome(){
+  document.getElementById('w-nombre').textContent=currentUser.nombre+(currentUser.apellido?' '+currentUser.apellido:'');
+  document.getElementById('welcome-overlay').classList.add('open');
+}
+
+async function doLogin(){
+  var u=document.getElementById('l-user').value.trim(),p=document.getElementById('l-pass').value;
+  document.getElementById('login-error').textContent='Verificando...';
+  try{
+    var res=await db('usuarios?username=eq.'+encodeURIComponent(u)+'&password=eq.'+encodeURIComponent(p));
+    if(!res.length){document.getElementById('login-error').textContent='Usuario o contraseña incorrectos';return;}
+    currentUser=res[0];document.getElementById('login-error').textContent='';
+    document.getElementById('l-user').value='';document.getElementById('l-pass').value='';
+    refreshNav();movimientos=await db('efectivo?order=created_at.desc');
+    showView('view-list');renderSaldos();renderList();showWelcome();
+  }catch(e){document.getElementById('login-error').textContent='Error de conexión. Intenta de nuevo.';}
+}
+
+function doLogout(){currentUser=null;showView('view-login');}
+
+async function showList(){
+  showView('view-list');
+  document.getElementById('list-container').innerHTML='<div class="loading">Actualizando...</div>';
+  try{movimientos=await db('efectivo?order=created_at.desc');}catch(e){}
+  renderSaldos();renderList();
+}
+
+function showForm(id){
+  editingId=id||null;
+  var m=id?movimientos.filter(function(x){return x.id===id;})[0]:null;
+  if(m){
+    document.getElementById('f-usuario').value=m.usuario||'';
+    document.getElementById('f-fecha').value=m.fecha||'';
+    document.getElementById('f-tipo').value=m.tipo||'Ingreso';
+    document.getElementById('f-moneda').value=m.moneda||'$';
+    document.getElementById('f-monto').value=m.monto||'';
+    document.getElementById('f-nombre').value=m.nombre||'';
+    document.getElementById('f-concepto').value=m.concepto||'';
+    document.getElementById('f-notas').value=m.notas||'';
+  } else {
+    document.getElementById('f-usuario').value=currentUser?currentUser.nombre+' '+(currentUser.apellido||''):'';
+    document.getElementById('f-fecha').value=new Date().toISOString().split('T')[0];
+    document.getElementById('f-tipo').value='Ingreso';
+    document.getElementById('f-moneda').value='$';
+    document.getElementById('f-monto').value='';
+    document.getElementById('f-nombre').value='';
+    document.getElementById('f-concepto').value='';
+    document.getElementById('f-notas').value='';
+  }
+  document.getElementById('form-title').textContent=id?'Editar movimiento':'Nuevo movimiento';
+  showView('view-form');
+}
+
+function gv(id){var e=document.getElementById(id);return e?e.value:'';}
+function gn(id){return parseFloat(gv(id))||0;}
+
+function fmtM(n,moneda){
+  var abs=Math.abs(parseFloat(n)||0).toFixed(2);
+  if(moneda==='$')return '$'+abs;
+  if(moneda==='€')return '€'+abs;
+  return abs+' Bs.';
+}
+
+async function guardar(){
+  var bg=document.getElementById('btn-guardar');bg.textContent='Guardando...';bg.disabled=true;
+  if(!gv('f-concepto').trim()){alert('El concepto es obligatorio');bg.textContent='Guardar movimiento';bg.disabled=false;return;}
+  var r={
+    usuario:gv('f-usuario').trim(),
+    fecha:gv('f-fecha'),
+    tipo:gv('f-tipo'),
+    moneda:gv('f-moneda'),
+    monto:gn('f-monto'),
+    nombre:gv('f-nombre').trim(),
+    concepto:gv('f-concepto').trim(),
+    notas:gv('f-notas').trim(),
+    creado_por:currentUser?currentUser.username:''
+  };
+  try{
+    if(editingId)await db('efectivo?id=eq.'+editingId,'PATCH',r);
+    else await db('efectivo','POST',r);
+    await showList();
+  }catch(e){alert('Error al guardar: '+e.message);}
+  bg.textContent='Guardar movimiento';bg.disabled=false;
+}
+
+function renderSaldos(){
+  var monedas=[{k:'$',n:'Dólares'},{k:'Bs.',n:'Bolívares'},{k:'€',n:'Euros'}];
+  var html='';
+  monedas.forEach(function(mon){
+    var ing=0,egr=0;
+    movimientos.forEach(function(m){
+      if(m.moneda!==mon.k)return;
+      if(m.tipo==='Ingreso')ing+=parseFloat(m.monto)||0;
+      else egr+=parseFloat(m.monto)||0;
+    });
+    var saldo=ing-egr;
+    var cls=saldo>=0?'pos':'neg';
+    var signo=saldo>=0?'▲':'▼';
+    html+='<div class="saldo-card">'+
+      '<div class="saldo-moneda">'+mon.n+' ('+mon.k+')</div>'+
+      '<div class="saldo-valor '+cls+'">'+fmtM(Math.abs(saldo),mon.k)+' '+signo+'</div>'+
+      '<div class="saldo-sub">↑ '+fmtM(ing,mon.k)+' &nbsp;·&nbsp; ↓ '+fmtM(egr,mon.k)+'</div>'+
+    '</div>';
+  });
+  document.getElementById('saldos-container').innerHTML=html;
+}
+
+function renderList(){
+  var q=(document.getElementById('search-input').value||'').toLowerCase();
+  var tipo=document.getElementById('filter-tipo').value;
+  var moneda=document.getElementById('filter-moneda').value;
+  var filtered=movimientos.filter(function(m){
+    if(q&&(m.nombre||'').toLowerCase().indexOf(q)<0&&(m.concepto||'').toLowerCase().indexOf(q)<0&&(m.usuario||'').toLowerCase().indexOf(q)<0)return false;
+    if(tipo&&m.tipo!==tipo)return false;
+    if(moneda&&m.moneda!==moneda)return false;
+    return true;
+  });
+  var c=document.getElementById('list-container');
+  if(!filtered.length){c.innerHTML='<div class="es">No hay movimientos. Clic en "+ Movimiento" para comenzar.</div>';return;}
+  var html='<div style="overflow-x:auto"><table class="lt"><thead><tr>'+
+    '<th>Usuario</th><th>Fecha</th><th>Tipo</th><th>Moneda</th><th>Monto</th><th>Nombre</th><th>Concepto</th><th>Notas</th><th></th>'+
+  '</tr></thead><tbody>';
+  filtered.forEach(function(m){
+    var esIng=m.tipo==='Ingreso';
+    var rowCls=esIng?'ing-row':'egr-row';
+    var tipoBdg=esIng?'<span class="bdg bs">↑ Ingreso</span>':'<span class="bdg br">↓ Egreso</span>';
+    var monBdg=m.moneda==='$'?'<span class="bdg bi">$</span>':(m.moneda==='€'?'<span class="bdg by">€</span>':'<span class="bdg bp">Bs.</span>');
+    var colorMonto=esIng?'#15803d':'#b91c1c';
+    var delBtn=isAdmin()?'<button class="btn-d" onclick="eliminar(\''+m.id+'\')">Eliminar</button>':'';
+    html+='<tr class="'+rowCls+'">'+
+      '<td style="color:#555;font-size:13px">'+(m.usuario||'—')+'</td>'+
+      '<td style="color:#555">'+(m.fecha||'—')+'</td>'+
+      '<td>'+tipoBdg+'</td>'+
+      '<td>'+monBdg+'</td>'+
+      '<td style="font-weight:700;color:'+colorMonto+'">'+fmtM(m.monto,m.moneda)+'</td>'+
+      '<td style="font-weight:600">'+(m.nombre||'—')+'</td>'+
+      '<td>'+(m.concepto||'—')+'</td>'+
+      '<td style="color:#888;font-size:13px">'+(m.notas||'—')+'</td>'+
+      '<td style="display:flex;gap:6px;white-space:nowrap">'+
+        '<button class="btn-s" style="font-size:13px;padding:5px 12px" onclick="showForm(\''+m.id+'\')">Editar</button>'+
+        delBtn+
+      '</td>'+
+    '</tr>';
+  });
+  html+='</tbody></table></div>';
+  c.innerHTML=html;
+}
+
+async function eliminar(id){
+  if(!isAdmin()){alert('Solo el administrador puede eliminar.');return;}
+  if(!confirm('¿Eliminar este movimiento?'))return;
+  try{await db('efectivo?id=eq.'+id,'DELETE');await showList();}catch(e){alert('Error al eliminar.');}
+}
+
+showView('view-login');
+</script>
+</body>
+</html>
