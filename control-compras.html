@@ -20,6 +20,8 @@ button{cursor:pointer;font-family:system-ui,sans-serif;font-size:14px;border-rad
 .btn-d:hover{background:#fbd5d1!important}
 .btn-i{background:#dbeafe!important;color:#1d4ed8!important;border:1px solid #93c5fd!important;padding:8px 16px;font-weight:500}
 .btn-i:hover{background:#bfdbfe!important}
+.btn-pdf{background:#f0fdf4!important;color:#166534!important;border:1px solid #86efac!important;padding:5px 12px;font-size:13px;font-weight:600}
+.btn-pdf:hover{background:#dcfce7!important}
 .card{background:#fff;border:1px solid #d0d4db;border-radius:10px;padding:1.25rem;margin-bottom:1rem}
 .slabel{font-size:12px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid #eee}
 .g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:14px}
@@ -40,12 +42,14 @@ button{cursor:pointer;font-family:system-ui,sans-serif;font-size:14px;border-rad
 .met .ms{font-size:13px;color:#999;margin-top:3px}
 .pos{color:#15803d!important}.neg{color:#b91c1c!important}
 .fa{display:flex;gap:10px;justify-content:flex-end;margin-top:1rem;padding-bottom:2rem}
-.pdf-a{border:1.5px dashed #b0b4bc;border-radius:8px;padding:14px;text-align:center;cursor:pointer;color:#666;font-size:13px;background:#fafafa}
+.pdf-a{border:1.5px dashed #b0b4bc;border-radius:8px;padding:14px;text-align:center;cursor:pointer;color:#666;font-size:13px;background:#fafafa;transition:background 0.15s}
 .pdf-a:hover{background:#f0f2f5}
-.pdf-n{font-size:13px;color:#15803d;margin-top:4px;font-weight:600}
+.pdf-a.uploading{border-color:#86efac;background:#f0fdf4;color:#166534}
+.pdf-uploaded{display:flex;align-items:center;gap:8px;margin-top:8px;padding:8px 12px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px}
+.pdf-uploaded span{font-size:13px;color:#166534;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .es{text-align:center;padding:3rem 1rem;color:#888;font-size:15px}
 .lbtn{background:none;border:none;color:#1d4ed8;font-size:14px;padding:0;cursor:pointer;text-decoration:underline;font-weight:600}
-.dr{display:flex;justify-content:space-between;padding:8px 0;font-size:14px;border-bottom:1px solid #f0f0f0}
+.dr{display:flex;justify-content:space-between;padding:8px 0;font-size:14px;border-bottom:1px solid #f0f0f0;align-items:center}
 .dr:last-child{border-bottom:none}
 .dr span:first-child{color:#555;font-weight:600}
 .gg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:10px}
@@ -130,7 +134,13 @@ button{cursor:pointer;font-family:system-ui,sans-serif;font-size:14px;border-rad
     <div class="card"><div class="slabel">1 — Cliente</div>
       <div class="g3"><div class="f"><label>Nombre del cliente</label><input type="text" id="f-cliente"></div><div class="f"><label>Código</label><input type="text" id="f-codigo"></div><div class="f"><label>Fecha de compra</label><input type="date" id="f-fecha-compra"></div></div>
       <div class="g2"><div class="f"><label>Sitio de compra</label><input type="text" id="f-sitio"></div><div class="f"><label>Monto de la compra ($)</label><input type="number" id="f-monto-compra" step="0.01" min="0" oninput="calcular()"></div></div>
-      <div class="f fc" style="margin-bottom:0"><label>Factura de compra (PDF)</label><div class="pdf-a" onclick="document.getElementById('pdf-compra').click()">Haz clic para adjuntar PDF<input type="file" id="pdf-compra" accept="application/pdf" style="display:none" onchange="hPdf('pdf-compra','pdf-compra-name')"></div><div class="pdf-n" id="pdf-compra-name"></div></div>
+      <div class="f fc" style="margin-bottom:0"><label>Factura de compra (PDF)</label>
+        <div class="pdf-a" id="zona-compra" onclick="document.getElementById('pdf-compra').click()">
+          📎 Haz clic para adjuntar PDF
+          <input type="file" id="pdf-compra" accept="application/pdf" style="display:none" onchange="handlePdfUpload('pdf-compra','compra')">
+        </div>
+        <div id="pdf-compra-preview"></div>
+      </div>
     </div>
     <div class="card"><div class="slabel">2 — Recepción del paquete</div>
       <div class="g3"><div class="f"><label>Tracking de envío</label><input type="text" id="f-tracking"></div><div class="f"><label>WR de recepción</label><input type="text" id="f-wr-rec"></div><div class="f"><label>Nombre del courier</label><input type="text" id="f-courier-rec"></div></div>
@@ -140,7 +150,13 @@ button{cursor:pointer;font-family:system-ui,sans-serif;font-size:14px;border-rad
       <div class="g3"><div class="f"><label>Tipo de envío</label><select id="f-tipo-envio" onchange="calcular()"><option value="Aéreo">Aéreo</option><option value="Marítimo">Marítimo</option></select></div><div class="f"><label>Peso (lbs/kg)</label><input type="number" id="f-peso" step="0.01" min="0" oninput="calcular()"></div><div class="f"><label>Peso volumétrico</label><input type="number" id="f-peso-vol" step="0.01" min="0" oninput="calcular()"></div></div>
       <div class="g3"><div class="f"><label>Pies cúbicos</label><input type="number" id="f-pies" step="0.01" min="0" oninput="calcular()"></div><div class="f"><label>Tarifa de envío ($)</label><input type="number" id="f-tarifa-env" step="0.01" min="0" oninput="calcular()"></div><div class="f"><label>Cargo adicional ($)</label><input type="number" id="f-cargo-env" step="0.01" min="0" oninput="calcular()"></div></div>
       <div class="g3"><div class="f"><label>WR de envío</label><input type="text" id="f-wr-env"></div><div class="f"><label>Courier de envío</label><input type="text" id="f-courier-env"></div><div class="f fro"><label>Total costo envío ($)</label><input type="number" id="f-total-env" readonly><div class="chint" id="hint-env"></div></div></div>
-      <div class="f fc" style="margin-bottom:0"><label>Factura de envío (PDF)</label><div class="pdf-a" onclick="document.getElementById('pdf-envio').click()">Haz clic para adjuntar PDF<input type="file" id="pdf-envio" accept="application/pdf" style="display:none" onchange="hPdf('pdf-envio','pdf-envio-name')"></div><div class="pdf-n" id="pdf-envio-name"></div></div>
+      <div class="f fc" style="margin-bottom:0"><label>Factura de envío (PDF)</label>
+        <div class="pdf-a" id="zona-envio" onclick="document.getElementById('pdf-envio').click()">
+          📎 Haz clic para adjuntar PDF
+          <input type="file" id="pdf-envio" accept="application/pdf" style="display:none" onchange="handlePdfUpload('pdf-envio','envio')">
+        </div>
+        <div id="pdf-envio-preview"></div>
+      </div>
     </div>
     <div class="card"><div class="slabel">4 — Cobro al cliente por envío</div>
       <div class="g3"><div class="f"><label>Medida a cobrar</label><select id="f-medida-cobro" onchange="calcular()"><option value="Peso">Peso</option><option value="Peso volumétrico">Peso volumétrico</option><option value="Pies cúbicos">Pies cúbicos</option></select></div><div class="f fro"><label>Valor de la medida</label><input type="number" id="f-valor-medida" readonly><div class="hint">Tomado del cuadro 3</div></div><div class="f"><label>Tarifa de cobro ($)</label><input type="number" id="f-tarifa-cobro" step="0.01" min="0" oninput="calcular()"></div></div>
@@ -215,6 +231,7 @@ button{cursor:pointer;font-family:system-ui,sans-serif;font-size:14px;border-rad
 <script>
 var SB_URL='https://vxmwojjkgtljkbdjihmh.supabase.co';
 var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4bXdvamprZ3RsamtiZGppaG1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NDAyMDUsImV4cCI6MjA5MDIxNjIwNX0.caTMNi7kOcyJHjNSywbxiaIpwKFyeLdxJgiP5oRqu8U';
+var BUCKET='facturas';
 
 async function db(path,method,body){
   var h={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'};
@@ -223,7 +240,27 @@ async function db(path,method,body){
   var t=await r.text();return t?JSON.parse(t):[];
 }
 
+async function uploadPdf(file,tipo,registroId){
+  var ext=file.name.split('.').pop();
+  var path=registroId+'/'+tipo+'.'+ext;
+  var r=await fetch(SB_URL+'/storage/v1/object/'+BUCKET+'/'+path,{
+    method:'POST',
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':file.type,'x-upsert':'true'},
+    body:file
+  });
+  if(!r.ok)throw new Error(await r.text());
+  return {path:path,name:file.name,url:SB_URL+'/storage/v1/object/public/'+BUCKET+'/'+path};
+}
+
+function pdfUrl(path){
+  if(!path)return null;
+  if(path.startsWith('http'))return path;
+  return SB_URL+'/storage/v1/object/public/'+BUCKET+'/'+path;
+}
+
 var records=[],users=[],currentUser=null,editingId=null,viewingId=null,editingUserId=null;
+var pdfCompraData=null,pdfEnvioData=null;
+
 function isAdmin(){return currentUser&&currentUser.rol==='admin';}
 function isCerrado(r){return r&&r.fecha_rest&&r.fecha_rest.length>0&&(parseFloat(r.restante)||0)<=0;}
 function canEdit(r){return isAdmin()||!isCerrado(r);}
@@ -238,6 +275,41 @@ function refreshNav(){
   document.getElementById('btn-usuarios').style.display=currentUser.rol==='admin'?'':'none';
 }
 function showWelcome(){document.getElementById('w-nombre').textContent=currentUser.nombre+(currentUser.apellido?' '+currentUser.apellido:'');document.getElementById('welcome-overlay').classList.add('open');}
+
+async function handlePdfUpload(inputId,tipo){
+  var file=document.getElementById(inputId).files[0];
+  if(!file)return;
+  var zona=document.getElementById('zona-'+tipo);
+  var preview=document.getElementById('pdf-'+tipo+'-preview');
+  zona.classList.add('uploading');
+  zona.textContent='⏳ Subiendo...';
+  try{
+    var tempId=editingId||('temp_'+Date.now());
+    var result=await uploadPdf(file,tipo,tempId);
+    if(tipo==='compra')pdfCompraData=result;
+    else pdfEnvioData=result;
+    zona.textContent='📎 Haz clic para cambiar el PDF';
+    zona.classList.remove('uploading');
+    preview.innerHTML='<div class="pdf-uploaded"><span>📄 '+file.name+'</span><a href="'+result.url+'" target="_blank" class="btn-pdf">Ver PDF</a></div>';
+  }catch(e){
+    zona.classList.remove('uploading');
+    zona.textContent='📎 Haz clic para adjuntar PDF';
+    alert('Error al subir el PDF: '+e.message);
+  }
+}
+
+function setPdfPreview(tipo,name,path){
+  var zona=document.getElementById('zona-'+tipo);
+  var preview=document.getElementById('pdf-'+tipo+'-preview');
+  if(name&&path){
+    zona.textContent='📎 Haz clic para cambiar el PDF';
+    var url=pdfUrl(path);
+    preview.innerHTML='<div class="pdf-uploaded"><span>📄 '+name+'</span><a href="'+url+'" target="_blank" class="btn-pdf">Ver PDF</a></div>';
+  }else{
+    zona.textContent='📎 Haz clic para adjuntar PDF';
+    preview.innerHTML='';
+  }
+}
 
 async function doLogin(){
   var u=document.getElementById('l-user').value.trim(),p=document.getElementById('l-pass').value;
@@ -269,10 +341,10 @@ async function showUsers(){
 function showForm(id){
   var r=id?records.filter(function(x){return x.id===id;})[0]:null;
   if(r&&!canEdit(r)){alert('Registro cerrado. Solo el administrador puede editarlo.');return;}
-  editingId=id||null;clearForm();
+  editingId=id||null;clearForm();pdfCompraData=null;pdfEnvioData=null;
   var locked=r&&isCerrado(r);
   document.getElementById('lock-banner').className=locked&&isAdmin()?'lb2 on':'lb2';
-  if(r)fillForm(r);
+  if(r){fillForm(r);}
   document.getElementById('form-title').textContent=id?'Editar registro':'Nuevo registro';
   var bg=document.getElementById('btn-guardar'),bc=document.getElementById('btn-cancelar');
   if(locked&&!isAdmin()){bg.style.display='none';bc.textContent='← Volver';}else{bg.style.display='';bc.textContent='Cancelar';}
@@ -338,7 +410,7 @@ function clearForm(){
   ['f-tipo-envio','f-medida-cobro','f-tipo-abono','f-tipo-rest'].forEach(function(id){var el=document.getElementById(id);if(el)el.disabled=false;});
   document.getElementById('f-tipo-envio').value='Aéreo';document.getElementById('f-medida-cobro').value='Peso';
   document.getElementById('f-tipo-abono').value='$';document.getElementById('f-tipo-rest').value='$';
-  document.getElementById('pdf-compra-name').textContent='';document.getElementById('pdf-envio-name').textContent='';
+  setPdfPreview('compra','','');setPdfPreview('envio','','');
 }
 
 function fillForm(r){
@@ -348,8 +420,8 @@ function fillForm(r){
   s('f-tipo-envio',r.tipo_envio);s('f-peso',r.peso);s('f-peso-vol',r.peso_vol);s('f-pies',r.pies);s('f-tarifa-env',r.tarifa_env);s('f-cargo-env',r.cargo_env);s('f-wr-env',r.wr_env);s('f-courier-env',r.courier_env);
   s('f-medida-cobro',r.medida_cobro);s('f-tarifa-cobro',r.tarifa_cobro);s('f-cargo-cobro',r.cargo_cobro);
   s('f-cotizado',r.cotizado);s('f-abono',r.abono);s('f-fecha-abono',r.fecha_abono);s('f-tipo-abono',r.tipo_abono);s('f-fecha-rest',r.fecha_rest);s('f-tipo-rest',r.tipo_rest);s('f-nota-pago',r.nota_pago);
-  if(r.pdf_compra_name)document.getElementById('pdf-compra-name').textContent=r.pdf_compra_name;
-  if(r.pdf_envio_name)document.getElementById('pdf-envio-name').textContent=r.pdf_envio_name;
+  if(r.pdf_compra_name)setPdfPreview('compra',r.pdf_compra_name,r.pdf_compra_url||'');
+  if(r.pdf_envio_name)setPdfPreview('envio',r.pdf_envio_name,r.pdf_envio_url||'');
 }
 
 function gv(id){var e=document.getElementById(id);return e?e.value:'';}
@@ -379,13 +451,18 @@ function calcular(){
   var e4=document.getElementById('m-margen');e4.textContent=g.mg.toFixed(1)+'%';e4.className='mv '+(g.mg>=0?'pos':'neg');
 }
 
-function hPdf(i,n){var f=document.getElementById(i).files[0];if(f)document.getElementById(n).textContent=f.name;}
-
 async function guardar(){
   var bg=document.getElementById('btn-guardar');bg.textContent='Guardando...';bg.disabled=true;
   var te=parseFloat(document.getElementById('f-total-env').value)||0,tc=parseFloat(document.getElementById('f-total-cobro').value)||0;
   var cot=gn('f-cotizado'),abo=gn('f-abono'),mc=gn('f-monto-compra'),g=cG(mc,cot,te,tc);
-  var r={cliente:gv('f-cliente'),codigo:gv('f-codigo'),fecha_compra:gv('f-fecha-compra'),sitio:gv('f-sitio'),monto_compra:mc,pdf_compra_name:document.getElementById('pdf-compra-name').textContent,tracking:gv('f-tracking'),wr_rec:gv('f-wr-rec'),courier_rec:gv('f-courier-rec'),paquetes:gv('f-paquetes'),fecha_rec:gv('f-fecha-rec'),ciudad:gv('f-ciudad'),tipo_envio:gv('f-tipo-envio'),peso:gn('f-peso'),peso_vol:gn('f-peso-vol'),pies:gn('f-pies'),tarifa_env:gn('f-tarifa-env'),cargo_env:gn('f-cargo-env'),total_env:te,wr_env:gv('f-wr-env'),courier_env:gv('f-courier-env'),pdf_envio_name:document.getElementById('pdf-envio-name').textContent,medida_cobro:gv('f-medida-cobro'),tarifa_cobro:gn('f-tarifa-cobro'),cargo_cobro:gn('f-cargo-cobro'),total_cobro:tc,cotizado:cot,abono:abo,fecha_abono:gv('f-fecha-abono'),tipo_abono:gv('f-tipo-abono'),restante:cot-abo,fecha_rest:gv('f-fecha-rest'),tipo_rest:gv('f-tipo-rest'),nota_pago:gv('f-nota-pago'),gan_compra:g.gc,gan_envio:g.ge,ingresos:g.ing,costos:g.cos,gan_total:g.gt,margen:g.mg,creado_por:currentUser?currentUser.username:''};
+  var r={cliente:gv('f-cliente'),codigo:gv('f-codigo'),fecha_compra:gv('f-fecha-compra'),sitio:gv('f-sitio'),monto_compra:mc,
+    tracking:gv('f-tracking'),wr_rec:gv('f-wr-rec'),courier_rec:gv('f-courier-rec'),paquetes:gv('f-paquetes'),fecha_rec:gv('f-fecha-rec'),ciudad:gv('f-ciudad'),
+    tipo_envio:gv('f-tipo-envio'),peso:gn('f-peso'),peso_vol:gn('f-peso-vol'),pies:gn('f-pies'),tarifa_env:gn('f-tarifa-env'),cargo_env:gn('f-cargo-env'),total_env:te,wr_env:gv('f-wr-env'),courier_env:gv('f-courier-env'),
+    medida_cobro:gv('f-medida-cobro'),tarifa_cobro:gn('f-tarifa-cobro'),cargo_cobro:gn('f-cargo-cobro'),total_cobro:tc,
+    cotizado:cot,abono:abo,fecha_abono:gv('f-fecha-abono'),tipo_abono:gv('f-tipo-abono'),restante:cot-abo,fecha_rest:gv('f-fecha-rest'),tipo_rest:gv('f-tipo-rest'),nota_pago:gv('f-nota-pago'),
+    gan_compra:g.gc,gan_envio:g.ge,ingresos:g.ing,costos:g.cos,gan_total:g.gt,margen:g.mg,creado_por:currentUser?currentUser.username:''};
+  if(pdfCompraData){r.pdf_compra_name=pdfCompraData.name;r.pdf_compra_url=pdfCompraData.path;}
+  if(pdfEnvioData){r.pdf_envio_name=pdfEnvioData.name;r.pdf_envio_url=pdfEnvioData.path;}
   try{
     if(editingId)await db('registros?id=eq.'+editingId,'PATCH',r);
     else await db('registros','POST',r);
@@ -432,13 +509,19 @@ function verDetalle(id){
   if(isAdmin())btns+='<button class="btn-d" onclick="if(confirm(\'¿Eliminar?\')){ eliminar(\''+r.id+'\'); showList(); }">Eliminar</button>';
   btns+='<button class="btn-s" onclick="showList()">← Volver</button>';
   da.innerHTML=btns;
+  function pdfBtn(name,path){
+    if(!name)return '—';
+    var url=pdfUrl(path);
+    if(!url)return name;
+    return '<a href="'+url+'" target="_blank" class="btn-pdf">📄 '+name+'</a>';
+  }
   function sec(t,rows){return '<div class="card"><div class="slabel">'+t+'</div>'+rows.map(function(x){return '<div class="dr"><span>'+x[0]+'</span><span>'+(x[1]||'—')+'</span></div>';}).join('')+'</div>';}
   var gc=(r.gan_compra||0)>=0?'pos':'neg',ge=(r.gan_envio||0)>=0?'pos':'neg',gt=(r.gan_total||0)>=0?'pos':'neg';
   document.getElementById('detail-content').innerHTML=
     (cerrado?'<div class="lb2 on" style="margin-bottom:1rem">Registro cerrado — pago completo el '+r.fecha_rest+'</div>':'')+
-    sec('Cliente',[['Nombre',r.cliente],['Código',r.codigo],['Fecha de compra',r.fecha_compra],['Sitio',r.sitio],['Monto de compra',fmt(r.monto_compra)],['Factura compra',r.pdf_compra_name||'—']])+
+    sec('Cliente',[['Nombre',r.cliente],['Código',r.codigo],['Fecha de compra',r.fecha_compra],['Sitio',r.sitio],['Monto de compra',fmt(r.monto_compra)],['Factura compra',pdfBtn(r.pdf_compra_name,r.pdf_compra_url)]])+
     sec('Recepción',[['Tracking',r.tracking],['WR recepción',r.wr_rec],['Courier',r.courier_rec],['Paquetes',r.paquetes],['Fecha recibido',r.fecha_rec],['Ciudad / País',r.ciudad]])+
-    sec('Envío — costos',[['Tipo',r.tipo_envio],['Peso',r.peso],['Peso vol.',r.peso_vol],['Pies³',r.pies],['Tarifa',fmt(r.tarifa_env)],['Cargo adicional',fmt(r.cargo_env)],['Total costo envío',fmt(r.total_env)],['WR envío',r.wr_env],['Courier envío',r.courier_env],['Factura envío',r.pdf_envio_name||'—']])+
+    sec('Envío — costos',[['Tipo',r.tipo_envio],['Peso',r.peso],['Peso vol.',r.peso_vol],['Pies³',r.pies],['Tarifa',fmt(r.tarifa_env)],['Cargo adicional',fmt(r.cargo_env)],['Total costo envío',fmt(r.total_env)],['WR envío',r.wr_env],['Courier envío',r.courier_env],['Factura envío',pdfBtn(r.pdf_envio_name,r.pdf_envio_url)]])+
     sec('Cobro cliente',[['Medida',r.medida_cobro],['Tarifa cobro',fmt(r.tarifa_cobro)],['Cargo adicional',fmt(r.cargo_cobro)],['Total cobrado',fmt(r.total_cobro)]])+
     sec('Pagos',[['Monto cotizado',fmt(r.cotizado)],['Abono',fmt(r.abono)+' — '+(r.tipo_abono||'')+(r.fecha_abono?' — '+r.fecha_abono:'')],['Restante',fmt(r.restante)+' — '+(r.tipo_rest||'')+(r.fecha_rest?' — '+r.fecha_rest:'')],['Notas',r.nota_pago]])+
     '<div class="card"><div class="slabel">Ganancia</div>'+
