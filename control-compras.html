@@ -102,13 +102,15 @@ button{cursor:pointer;font-family:system-ui,sans-serif;font-size:14px;border-rad
 .fecha-filtro{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px}
 .fecha-filtro input,.fecha-filtro select{height:38px;padding:0 10px;border:1px solid #b0b4bc;border-radius:8px;background:#fff;color:#111;font-size:14px;font-family:system-ui,sans-serif}
 @media print{
-  @page{size:A4 landscape;margin:12mm}
+  @page{size:A4 landscape;margin:10mm}
   .no-print{display:none!important}
-  body{background:#fff;font-size:11px}
-  .top-bar,.sr,.fecha-filtro{display:none!important}
-  .card{border:none;padding:0;margin-bottom:8px}
-  .lt th{background:#f3f4f6!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body{background:#fff;font-size:10px}
+  .top-bar,.sr,.fecha-filtro,.card{display:none!important}
   #print-header{display:block!important}
+  #print-all-content{display:block!important;font-size:9px}
+  #print-all-content table{width:100%;border-collapse:collapse;font-size:8px}
+  #print-all-content th{background:#f3f4f6!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:3px 4px;border:1px solid #ccc;font-size:7px;text-transform:uppercase}
+  #print-all-content td{padding:3px 4px;border:1px solid #eee;font-size:8px}
 }
 #print-header{display:none;margin-bottom:12px}
 #print-header h2{font-size:18px;font-weight:700}
@@ -141,6 +143,7 @@ button{cursor:pointer;font-family:system-ui,sans-serif;font-size:14px;border-rad
       <div style="display:flex;flex-direction:column;gap:4px"><label style="font-size:12px;font-weight:600;color:#333">Hasta</label><input type="date" id="f-hasta" onchange="renderList()"></div>
     </div>
     <div id="print-header"><h2>Control de Compras</h2><p id="print-subtitle"></p></div>
+    <div id="print-all-content" style="display:none"></div>
     <div class="sr">
       <input type="text" id="search-input" placeholder="Buscar por cliente o código..." oninput="renderList()">
       <select id="filter-tipo" onchange="renderList()"><option value="">Todos los tipos</option><option value="Aéreo">Aéreo</option><option value="Marítimo">Marítimo</option></select>
@@ -352,6 +355,59 @@ function setPdfPreview(tipo,name,path){
   }
 }
 
+var SOFTWARES=[{id:'control-compras',nombre:'Control de Compras'},{id:'control-efectivo',nombre:'Control de Efectivo'}];
+
+function getPermisos(u){
+  if(!u||u.rol==='admin')return SOFTWARES.map(function(s){return s.id;});
+  if(!u.permisos||u.permisos==='todos')return SOFTWARES.map(function(s){return s.id;});
+  try{return JSON.parse(u.permisos);}catch(e){return [];}
+}
+
+function tieneAcceso(u,softwareId){
+  if(!u)return false;
+  if(u.rol==='admin')return true;
+  var p=getPermisos(u);
+  return p.indexOf(softwareId)>=0;
+}
+
+function renderUsers(){
+  var html='<table class="ut"><thead><tr><th>Nombre</th><th>Apellido</th><th>Usuario</th><th>Rol</th><th>Acceso a sistemas</th><th></th></tr></thead><tbody>';
+  users.forEach(function(u){
+    var rb=u.rol==='admin'?'<span class="bdg bw">Admin</span>':'<span class="bdg bi">Usuario</span>';
+    var isMe=currentUser&&currentUser.id===u.id;
+    var permisos=getPermisos(u);
+    var permHtml='';
+    if(u.rol==='admin'){
+      permHtml='<span style="font-size:12px;color:#888">Acceso total</span>';
+    } else {
+      SOFTWARES.forEach(function(s){
+        var checked=permisos.indexOf(s.id)>=0;
+        permHtml+='<label style="display:inline-flex;align-items:center;gap:4px;margin-right:12px;font-size:13px;cursor:pointer">'+
+          '<input type="checkbox" '+(checked?'checked':'')+' onchange="togglePermiso(\''+u.id+'\',\''+s.id+'\',this.checked)" style="width:15px;height:15px;cursor:pointer">'+
+          s.nombre+'</label>';
+      });
+    }
+    html+='<tr'+(isMe?' style="background:#eff6ff"':'')+'>'+
+      '<td style="font-weight:600">'+u.nombre+(isMe?' <span class="bdg bi" style="font-size:11px">Tú</span>':'')+'</td>'+
+      '<td>'+(u.apellido||'—')+'</td><td style="color:#555">'+u.username+'</td><td>'+rb+'</td>'+
+      '<td>'+permHtml+'</td>'+
+      '<td style="display:flex;gap:6px"><button class="btn-s" style="font-size:13px;padding:5px 12px" onclick="openAddUser(\''+u.id+'\')">Editar</button><button class="btn-d" onclick="deleteUser(\''+u.id+'\')">Eliminar</button></td></tr>';
+  });
+  html+='</tbody></table>';document.getElementById('users-list').innerHTML=html;
+}
+
+async function togglePermiso(userId,softwareId,checked){
+  var u=users.filter(function(x){return x.id===userId;})[0];if(!u)return;
+  var permisos=getPermisos(u);
+  if(checked){if(permisos.indexOf(softwareId)<0)permisos.push(softwareId);}
+  else{permisos=permisos.filter(function(p){return p!==softwareId;});}
+  try{
+    await db('usuarios?id=eq.'+userId,'PATCH',{permisos:JSON.stringify(permisos)});
+    u.permisos=JSON.stringify(permisos);
+  }catch(e){alert('Error al guardar permiso.');}
+}
+
+
 async function doLogin(){
   var u=document.getElementById('l-user').value.trim(),p=document.getElementById('l-pass').value;
   document.getElementById('login-error').textContent='Verificando...';
@@ -443,57 +499,6 @@ async function deleteUser(id){
   try{await db('usuarios?id=eq.'+id,'DELETE');users=await db('usuarios?order=created_at.asc');renderUsers();}catch(e){alert('Error al eliminar.');}
 }
 
-var SOFTWARES=[{id:'control-compras',nombre:'Control de Compras'},{id:'control-efectivo',nombre:'Control de Efectivo'}];
-
-function getPermisos(u){
-  if(!u||u.rol==='admin')return SOFTWARES.map(function(s){return s.id;});
-  if(!u.permisos||u.permisos==='todos')return SOFTWARES.map(function(s){return s.id;});
-  try{return JSON.parse(u.permisos);}catch(e){return [];}
-}
-
-function tieneAcceso(u,softwareId){
-  if(!u)return false;
-  if(u.rol==='admin')return true;
-  var p=getPermisos(u);
-  return p.indexOf(softwareId)>=0;
-}
-
-function renderUsers(){
-  var html='<table class="ut"><thead><tr><th>Nombre</th><th>Apellido</th><th>Usuario</th><th>Rol</th><th>Acceso a sistemas</th><th></th></tr></thead><tbody>';
-  users.forEach(function(u){
-    var rb=u.rol==='admin'?'<span class="bdg bw">Admin</span>':'<span class="bdg bi">Usuario</span>';
-    var isMe=currentUser&&currentUser.id===u.id;
-    var permisos=getPermisos(u);
-    var permHtml='';
-    if(u.rol==='admin'){
-      permHtml='<span style="font-size:12px;color:#888">Acceso total</span>';
-    } else {
-      SOFTWARES.forEach(function(s){
-        var checked=permisos.indexOf(s.id)>=0;
-        permHtml+='<label style="display:inline-flex;align-items:center;gap:4px;margin-right:12px;font-size:13px;cursor:pointer">'+
-          '<input type="checkbox" '+(checked?'checked':'')+' onchange="togglePermiso(\''+u.id+'\',\''+s.id+'\',this.checked)" style="width:15px;height:15px;cursor:pointer">'+
-          s.nombre+'</label>';
-      });
-    }
-    html+='<tr'+(isMe?' style="background:#eff6ff"':'')+'>'+
-      '<td style="font-weight:600">'+u.nombre+(isMe?' <span class="bdg bi" style="font-size:11px">Tú</span>':'')+'</td>'+
-      '<td>'+(u.apellido||'—')+'</td><td style="color:#555">'+u.username+'</td><td>'+rb+'</td>'+
-      '<td>'+permHtml+'</td>'+
-      '<td style="display:flex;gap:6px"><button class="btn-s" style="font-size:13px;padding:5px 12px" onclick="openAddUser(\''+u.id+'\')">Editar</button><button class="btn-d" onclick="deleteUser(\''+u.id+'\')">Eliminar</button></td></tr>';
-  });
-  html+='</tbody></table>';document.getElementById('users-list').innerHTML=html;
-}
-
-async function togglePermiso(userId,softwareId,checked){
-  var u=users.filter(function(x){return x.id===userId;})[0];if(!u)return;
-  var permisos=getPermisos(u);
-  if(checked){if(permisos.indexOf(softwareId)<0)permisos.push(softwareId);}
-  else{permisos=permisos.filter(function(p){return p!==softwareId;});}
-  try{
-    await db('usuarios?id=eq.'+userId,'PATCH',{permisos:JSON.stringify(permisos)});
-    u.permisos=JSON.stringify(permisos);
-  }catch(e){alert('Error al guardar permiso.');}
-}
 
 function clearForm(){
   ['f-cliente','f-codigo','f-fecha-compra','f-sitio','f-monto-compra','f-tracking','f-wr-rec','f-courier-rec','f-paquetes','f-fecha-rec','f-ciudad','f-peso','f-peso-vol','f-pies','f-tarifa-env','f-cargo-env','f-wr-env','f-courier-env','f-tarifa-cobro','f-cargo-cobro','f-cotizado','f-abono','f-fecha-abono','f-fecha-rest','f-nota-pago'].forEach(function(id){var el=document.getElementById(id);if(el){el.value='';el.disabled=false;}});
@@ -693,8 +698,14 @@ function buildTableCC(data){
 
 function doPrint(){
   document.getElementById('export-menu').classList.remove('open');
-  document.getElementById('print-subtitle').textContent=getSubtitleCC();
+  var filtered=getFilteredCC();
+  document.getElementById('print-subtitle').textContent=getSubtitleCC()+' — '+filtered.length+' registro(s)';
+  // Build print content with ALL fields
+  var printDiv=document.getElementById('print-all-content');
+  printDiv.innerHTML=buildResumenCC(filtered)+'<div style="overflow-x:auto">'+buildFullTableCC(filtered)+'</div>';
+  printDiv.style.display='block';
   window.print();
+  printDiv.style.display='none';
 }
 
 function doExcel(){

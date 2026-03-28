@@ -74,15 +74,15 @@ button{cursor:pointer;font-family:system-ui,sans-serif;font-size:14px;border-rad
 .fecha-row input{height:38px;padding:0 10px;border:1px solid #b0b4bc;border-radius:8px;background:#fff;color:#111;font-size:14px;font-family:system-ui,sans-serif;width:100%}
 /* Print */
 @media print{
-  @page{size:A4 landscape;margin:15mm}
+  @page{size:A4 landscape;margin:10mm}
   .no-print{display:none!important}
-  body{background:#fff;font-size:12px}
-  .top-bar,.saldo-grid,.sr,.fecha-row,.nav{display:none!important}
-  .card{border:none;padding:0}
-  .lt th{background:#f3f4f6!important;-webkit-print-color-adjust:exact}
-  .ing-row td:first-child{border-left:3px solid #15803d!important}
-  .egr-row td:first-child{border-left:3px solid #b91c1c!important}
+  body{background:#fff;font-size:10px}
+  .top-bar,.saldo-grid,.sr,.fecha-row,.nav,.card{display:none!important}
   #print-header{display:block!important}
+  #print-saldos{display:block!important}
+  #print-saldos table{width:100%;border-collapse:collapse;font-size:8px}
+  #print-saldos th{background:#f3f4f6!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:3px 5px;border:1px solid #ccc;font-size:7px;text-transform:uppercase}
+  #print-saldos td{padding:3px 5px;border:1px solid #eee;font-size:8px}
 }
 #print-header{display:none;margin-bottom:16px}
 #print-header h2{font-size:18px;font-weight:700;color:#111}
@@ -394,9 +394,10 @@ function getSubtitle(){
 function doPrint(){
   document.getElementById('export-menu').classList.remove('open');
   var filtered=getFiltered();
-  document.getElementById('print-subtitle').textContent=getSubtitle();
+  document.getElementById('print-subtitle').textContent=getSubtitle()+' — '+filtered.length+' registro(s)';
   var ps=document.getElementById('print-saldos');
-  ps.innerHTML=buildResumen(filtered);ps.style.display='block';
+  ps.innerHTML=buildResumen(filtered)+'<div style="overflow-x:auto">'+buildFullTable(filtered)+'</div>';
+  ps.style.display='block';
   window.print();
   ps.style.display='none';
 }
