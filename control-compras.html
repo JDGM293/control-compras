@@ -160,6 +160,15 @@ button{cursor:pointer;font-family:system-ui,sans-serif;font-size:14px;border-rad
     </div>
   </div>
 
+  <div class="view" id="view-sin-acceso">
+    <div style="max-width:420px;margin:4rem auto;background:#fff;border:1px solid #d0d4db;border-radius:12px;padding:2.5rem;text-align:center">
+      <div style="font-size:48px;margin-bottom:16px">🔒</div>
+      <h2 style="font-size:22px;font-weight:700;margin-bottom:8px;color:#111">Sin acceso</h2>
+      <p style="font-size:14px;color:#666;margin-bottom:24px">No tienes permiso para acceder a este sistema. Contacta al administrador.</p>
+      <button class="btn-s" onclick="doLogout()">← Volver al inicio</button>
+    </div>
+  </div>
+
   <div class="view" id="view-form">
     <div class="top-bar"><h2 id="form-title">Nuevo registro</h2><button class="btn-s" onclick="showList()">← Volver</button></div>
     <div class="lb2" id="lock-banner">Registro cerrado. Solo el administrador puede editarlo.</div>
@@ -351,12 +360,17 @@ async function doLogin(){
     if(!res.length){document.getElementById('login-error').textContent='Usuario o contraseña incorrectos';return;}
     currentUser=res[0];document.getElementById('login-error').textContent='';
     document.getElementById('l-user').value='';document.getElementById('l-pass').value='';
+    if(!tieneAcceso(currentUser,'control-compras')){
+      document.getElementById('login-error').textContent='';
+      showSinAcceso();return;
+    }
     refreshNav();records=await db('registros?order=created_at.desc');
     showView('view-list');renderList();showWelcome();
   }catch(e){document.getElementById('login-error').textContent='Error de conexión. Intenta de nuevo.';}
 }
 
 function doLogout(){currentUser=null;showView('view-login');}
+function showSinAcceso(){showView('view-sin-acceso');}
 
 async function showList(){
   showView('view-list');editingId=null;
@@ -413,10 +427,13 @@ async function saveUser(){
   var nombre=document.getElementById('mu-nombre').value.trim(),apellido=document.getElementById('mu-apellido').value.trim(),username=document.getElementById('mu-user').value.trim(),password=document.getElementById('mu-pass').value,rol=document.getElementById('mu-rol').value;
   if(!nombre||!username||!password){document.getElementById('modal-user-error').textContent='Nombre, usuario y contraseña son obligatorios';return;}
   try{
+    var defaultPermisos=rol==='admin'?'todos':JSON.stringify(SOFTWARES.map(function(s){return s.id;}));
     if(editingUserId){
-      await db('usuarios?id=eq.'+editingUserId,'PATCH',{nombre,apellido,username,password,rol});
+      var existing=users.filter(function(u){return u.id===editingUserId;})[0];
+      var permisosActuales=existing?existing.permisos:defaultPermisos;
+      await db('usuarios?id=eq.'+editingUserId,'PATCH',{nombre,apellido,username,password,rol,permisos:permisosActuales});
       if(currentUser&&currentUser.id===editingUserId){currentUser=Object.assign({},currentUser,{nombre,apellido,username,rol});refreshNav();}
-    }else{await db('usuarios','POST',{nombre,apellido,username,password,rol});}
+    }else{await db('usuarios','POST',{nombre,apellido,username,password,rol,permisos:defaultPermisos});}
     users=await db('usuarios?order=created_at.asc');closeModal();renderUsers();
   }catch(e){document.getElementById('modal-user-error').textContent='Error: usuario ya existe o problema de conexión.';}
 }
@@ -426,14 +443,56 @@ async function deleteUser(id){
   try{await db('usuarios?id=eq.'+id,'DELETE');users=await db('usuarios?order=created_at.asc');renderUsers();}catch(e){alert('Error al eliminar.');}
 }
 
+var SOFTWARES=[{id:'control-compras',nombre:'Control de Compras'},{id:'control-efectivo',nombre:'Control de Efectivo'}];
+
+function getPermisos(u){
+  if(!u||u.rol==='admin')return SOFTWARES.map(function(s){return s.id;});
+  if(!u.permisos||u.permisos==='todos')return SOFTWARES.map(function(s){return s.id;});
+  try{return JSON.parse(u.permisos);}catch(e){return [];}
+}
+
+function tieneAcceso(u,softwareId){
+  if(!u)return false;
+  if(u.rol==='admin')return true;
+  var p=getPermisos(u);
+  return p.indexOf(softwareId)>=0;
+}
+
 function renderUsers(){
-  var html='<table class="ut"><thead><tr><th>Nombre</th><th>Apellido</th><th>Usuario</th><th>Rol</th><th></th></tr></thead><tbody>';
-  users.forEach(function(u){var rb=u.rol==='admin'?'<span class="bdg bw">Admin</span>':'<span class="bdg bi">Usuario</span>';var isMe=currentUser&&currentUser.id===u.id;
+  var html='<table class="ut"><thead><tr><th>Nombre</th><th>Apellido</th><th>Usuario</th><th>Rol</th><th>Acceso a sistemas</th><th></th></tr></thead><tbody>';
+  users.forEach(function(u){
+    var rb=u.rol==='admin'?'<span class="bdg bw">Admin</span>':'<span class="bdg bi">Usuario</span>';
+    var isMe=currentUser&&currentUser.id===u.id;
+    var permisos=getPermisos(u);
+    var permHtml='';
+    if(u.rol==='admin'){
+      permHtml='<span style="font-size:12px;color:#888">Acceso total</span>';
+    } else {
+      SOFTWARES.forEach(function(s){
+        var checked=permisos.indexOf(s.id)>=0;
+        permHtml+='<label style="display:inline-flex;align-items:center;gap:4px;margin-right:12px;font-size:13px;cursor:pointer">'+
+          '<input type="checkbox" '+(checked?'checked':'')+' onchange="togglePermiso(\''+u.id+'\',\''+s.id+'\',this.checked)" style="width:15px;height:15px;cursor:pointer">'+
+          s.nombre+'</label>';
+      });
+    }
     html+='<tr'+(isMe?' style="background:#eff6ff"':'')+'>'+
       '<td style="font-weight:600">'+u.nombre+(isMe?' <span class="bdg bi" style="font-size:11px">Tú</span>':'')+'</td>'+
       '<td>'+(u.apellido||'—')+'</td><td style="color:#555">'+u.username+'</td><td>'+rb+'</td>'+
-      '<td style="display:flex;gap:6px"><button class="btn-s" style="font-size:13px;padding:5px 12px" onclick="openAddUser(\''+u.id+'\')">Editar</button><button class="btn-d" onclick="deleteUser(\''+u.id+'\')">Eliminar</button></td></tr>';});
+      '<td>'+permHtml+'</td>'+
+      '<td style="display:flex;gap:6px"><button class="btn-s" style="font-size:13px;padding:5px 12px" onclick="openAddUser(\''+u.id+'\')">Editar</button><button class="btn-d" onclick="deleteUser(\''+u.id+'\')">Eliminar</button></td></tr>';
+  });
   html+='</tbody></table>';document.getElementById('users-list').innerHTML=html;
+}
+
+async function togglePermiso(userId,softwareId,checked){
+  var u=users.filter(function(x){return x.id===userId;})[0];if(!u)return;
+  var permisos=getPermisos(u);
+  if(checked){if(permisos.indexOf(softwareId)<0)permisos.push(softwareId);}
+  else{permisos=permisos.filter(function(p){return p!==softwareId;});}
+  try{
+    await db('usuarios?id=eq.'+userId,'PATCH',{permisos:JSON.stringify(permisos)});
+    u.permisos=JSON.stringify(permisos);
+  }catch(e){alert('Error al guardar permiso.');}
 }
 
 function clearForm(){
@@ -641,24 +700,80 @@ function doPrint(){
 function doExcel(){
   document.getElementById('export-menu').classList.remove('open');
   var filtered=getFilteredCC();
-  var rows=[['Cliente','Codigo','Fecha','Sitio','Monto Compra','Tracking','Tipo Envio','Peso','Pies','Total Envio','Total Cobro','Cotizado','Abono','Restante','G.Compra','G.Envio','G.Total','Margen%','Estado','Creado por']];
-  filtered.forEach(function(r){rows.push([r.cliente||'',r.codigo||'',r.fecha_compra||'',r.sitio||'',r.monto_compra||0,r.tracking||'',r.tipo_envio||'',r.peso||0,r.pies||0,r.total_env||0,r.total_cobro||0,r.cotizado||0,r.abono||0,r.restante||0,r.gan_compra||0,r.gan_envio||0,r.gan_total||0,(r.margen||0).toFixed(1),(isCerrado(r)?'Pagado':'Abierto'),r.creado_por||'']);});
-  rows.push([]);rows.push(['RESUMEN']);
+  var cols=['Cliente','Codigo','Fecha Compra','Sitio','Monto Compra','Tracking','WR Rec','Courier Rec','Paquetes','Fecha Rec','Ciudad','Tipo Envio','Peso','Peso Vol','Pies','Tarifa Envio','Cargo Envio','Total Envio','WR Envio','Courier Envio','Medida Cobro','Tarifa Cobro','Cargo Cobro','Total Cobro','Cotizado','Abono','Tipo Abono','Fecha Abono','Restante','Tipo Rest','Fecha Rest','Notas','G.Compra','G.Envio','G.Total','Margen%','Estado','Creado por'];
+  var rows=[cols];
+  filtered.forEach(function(r){
+    rows.push([
+      r.cliente||'',r.codigo||'',r.fecha_compra||'',r.sitio||'',r.monto_compra||0,
+      r.tracking||'',r.wr_rec||'',r.courier_rec||'',r.paquetes||'',r.fecha_rec||'',r.ciudad||'',
+      r.tipo_envio||'',r.peso||0,r.peso_vol||0,r.pies||0,
+      r.tarifa_env||0,r.cargo_env||0,r.total_env||0,r.wr_env||'',r.courier_env||'',
+      r.medida_cobro||'',r.tarifa_cobro||0,r.cargo_cobro||0,r.total_cobro||0,
+      r.cotizado||0,r.abono||0,r.tipo_abono||'',r.fecha_abono||'',
+      r.restante||0,r.tipo_rest||'',r.fecha_rest||'',r.nota_pago||'',
+      r.gan_compra||0,r.gan_envio||0,r.gan_total||0,(r.margen||0).toFixed(1),
+      (isCerrado(r)?'Pagado':'Abierto'),r.creado_por||''
+    ]);
+  });
+  rows.push([]);rows.push(['RESUMEN','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','','']);
   var tCot=0,tGC=0,tGE=0,tGT=0,tI=0;
   filtered.forEach(function(r){tCot+=(r.cotizado||0);tGC+=(r.gan_compra||0);tGE+=(r.gan_envio||0);tGT+=(r.gan_total||0);tI+=(r.ingresos||0);});
-  rows.push(['Total registros',filtered.length,'Cotizado',tCot,'G.Compra',tGC,'G.Envio',tGE,'G.Total',tGT,'Margen',tI>0?(tGT/tI*100).toFixed(1)+'%':'']);
+  rows.push(['Total registros',filtered.length,'','','','','','','','','','','','','','','','','','','','','','','Cotizado total',tCot,'','','','','','','G.Compra',tGC,'G.Envio',tGE,'G.Total',tGT]);
   var csv=rows.map(function(r){return r.map(function(c){return '"'+(String(c).replace(/"/g,'""'))+'"';}).join(',');}).join('\n');
   var blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
   var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='control-compras.csv';a.click();
 }
 
+function buildFullTableCC(data){
+  var cols=['Cliente','Codigo','Fecha Compra','Sitio','Monto Compra','Tracking','WR Rec','Courier Rec','Paquetes','Fecha Rec','Ciudad','Tipo Envio','Peso','Peso Vol','Pies','Tarifa Env','Cargo Env','Total Env','WR Env','Courier Env','Medida Cobro','Tarifa Cobro','Cargo Cobro','Total Cobro','Cotizado','Abono','Tipo Abono','Fecha Abono','Restante','Tipo Rest','Fecha Rest','Notas','G.Compra','G.Envio','G.Total','Margen%','Estado','Creado por'];
+  var html='<table style="width:100%;border-collapse:collapse;font-size:8pt"><thead><tr style="background:#f3f4f6">';
+  cols.forEach(function(h){html+='<th style="text-align:left;padding:4px 6px;border:1px solid #ccc;font-size:7pt;text-transform:uppercase;white-space:nowrap">'+h+'</th>';});
+  html+='</tr></thead><tbody>';
+  data.forEach(function(r){
+    var cerrado=isCerrado(r);
+    var gc=(r.gan_compra||0)>=0?'#15803d':'#b91c1c';
+    var ge=(r.gan_envio||0)>=0?'#15803d':'#b91c1c';
+    var gt=(r.gan_total||0)>=0?'#15803d':'#b91c1c';
+    function td(v,style){return '<td style="padding:4px 6px;border:1px solid #eee;'+(style||'')+'white-space:nowrap">'+(v||'')+'</td>';}
+    html+='<tr>'+
+      td(r.cliente,'font-weight:600;')+td(r.codigo,'color:#555;')+td(r.fecha_compra,'color:#555;')+td(r.sitio,'')+td(fmt(r.monto_compra),'text-align:right;')+
+      td(r.tracking,'')+td(r.wr_rec,'')+td(r.courier_rec,'')+td(r.paquetes,'')+td(r.fecha_rec,'color:#555;')+td(r.ciudad,'')+
+      td(r.tipo_envio,'')+td(r.peso,'text-align:right;')+td(r.peso_vol,'text-align:right;')+td(r.pies,'text-align:right;')+
+      td(fmt(r.tarifa_env),'text-align:right;')+td(fmt(r.cargo_env),'text-align:right;')+td(fmt(r.total_env),'text-align:right;font-weight:700;')+
+      td(r.wr_env,'')+td(r.courier_env,'')+
+      td(r.medida_cobro,'')+td(fmt(r.tarifa_cobro),'text-align:right;')+td(fmt(r.cargo_cobro),'text-align:right;')+td(fmt(r.total_cobro),'text-align:right;font-weight:700;')+
+      td(fmt(r.cotizado),'text-align:right;font-weight:700;')+td(fmt(r.abono),'text-align:right;')+td(r.tipo_abono,'')+td(r.fecha_abono,'color:#555;')+
+      td(fmt(r.restante),'text-align:right;')+td(r.tipo_rest,'')+td(r.fecha_rest,'color:#555;')+td(r.nota_pago,'')+
+      td(fmt(r.gan_compra),'color:'+gc+';font-weight:700;text-align:right;')+
+      td(fmt(r.gan_envio),'color:'+ge+';font-weight:700;text-align:right;')+
+      td(fmt(r.gan_total),'color:'+gt+';font-weight:700;text-align:right;')+
+      td((r.margen||0).toFixed(1)+'%','text-align:right;')+
+      td(cerrado?'Pagado':'Abierto','')+td(r.creado_por,'color:#888;')+
+    '</tr>';
+  });
+  // Totales
+  var tCot=0,tGC=0,tGE=0,tGT=0,tI=0;
+  data.forEach(function(r){tCot+=(r.cotizado||0);tGC+=(r.gan_compra||0);tGE+=(r.gan_envio||0);tGT+=(r.gan_total||0);tI+=(r.ingresos||0);});
+  var mp=tI>0?(tGT/tI*100):0;
+  html+='<tr style="background:#f3f4f6;font-weight:700"><td colspan="24" style="padding:5px 6px;border:1px solid #ccc">TOTALES ('+data.length+' registros)</td>'+
+    '<td style="padding:5px 6px;border:1px solid #ccc;text-align:right">'+fmt(tCot)+'</td>'+
+    '<td colspan="7" style="border:1px solid #ccc"></td>'+
+    '<td style="padding:5px 6px;border:1px solid #ccc;color:#15803d;text-align:right">'+fmt(tGC)+'</td>'+
+    '<td style="padding:5px 6px;border:1px solid #ccc;color:#15803d;text-align:right">'+fmt(tGE)+'</td>'+
+    '<td style="padding:5px 6px;border:1px solid #ccc;color:#15803d;text-align:right">'+fmt(tGT)+'</td>'+
+    '<td style="padding:5px 6px;border:1px solid #ccc;text-align:right">'+mp.toFixed(1)+'%</td>'+
+    '<td colspan="2" style="border:1px solid #ccc"></td></tr>';
+  html+='</tbody></table>';
+  return html;
+}
+
 function doWord(){
   document.getElementById('export-menu').classList.remove('open');
   var filtered=getFilteredCC();
-  var html='<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;font-size:10pt}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:5px 7px;font-size:9pt}th{background:#f3f4f6;font-weight:bold;text-transform:uppercase;font-size:8pt}h2{font-size:16pt;margin-bottom:4pt}p{font-size:10pt;color:#666;margin-bottom:10pt}</style></head><body>';
+  var html='<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;font-size:8pt}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:3px 5px;font-size:7pt}th{background:#f3f4f6;font-weight:bold;text-transform:uppercase}h2{font-size:14pt;margin-bottom:4pt}p{font-size:9pt;color:#666;margin-bottom:8pt}</style></head><body>';
   html+='<h2>Control de Compras</h2><p>'+getSubtitleCC()+'</p>';
   html+=buildResumenCC(filtered);
-  html+=buildTableCC(filtered);
+  html+=buildFullTableCC(filtered);
   html+='</body></html>';
   var blob=new Blob([html],{type:'application/msword'});
   var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='control-compras.doc';a.click();

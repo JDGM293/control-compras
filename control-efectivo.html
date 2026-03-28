@@ -140,6 +140,15 @@ button{cursor:pointer;font-family:system-ui,sans-serif;font-size:14px;border-rad
     </div>
   </div>
 
+  <div class="view" id="view-sin-acceso">
+    <div style="max-width:420px;margin:4rem auto;background:#fff;border:1px solid #d0d4db;border-radius:12px;padding:2.5rem;text-align:center">
+      <div style="font-size:48px;margin-bottom:16px">🔒</div>
+      <h2 style="font-size:22px;font-weight:700;margin-bottom:8px;color:#111">Sin acceso</h2>
+      <p style="font-size:14px;color:#666;margin-bottom:24px">No tienes permiso para acceder a este sistema. Contacta al administrador.</p>
+      <button class="btn-s" onclick="doLogout()">← Volver al inicio</button>
+    </div>
+  </div>
+
   <div class="view" id="view-form">
     <div class="top-bar"><h2 id="form-title">Nuevo movimiento</h2><button class="btn-s" onclick="showList()">← Volver</button></div>
     <div class="card">
@@ -212,6 +221,7 @@ async function doLogin(){
     if(!res.length){document.getElementById('login-error').textContent='Usuario o contraseña incorrectos';return;}
     currentUser=res[0];document.getElementById('login-error').textContent='';
     document.getElementById('l-user').value='';document.getElementById('l-pass').value='';
+    if(!tieneAccesoEfectivo(currentUser)){showSinAcceso();return;}
     refreshNav();movimientos=await db('efectivo?order=created_at.desc');
     showView('view-list');renderSaldos();renderList();showWelcome();
   }catch(e){document.getElementById('login-error').textContent='Error de conexión. Intenta de nuevo.';}
@@ -394,33 +404,78 @@ function doPrint(){
 function doExcel(){
   document.getElementById('export-menu').classList.remove('open');
   var filtered=getFiltered();
-  var rows=[['Usuario','Fecha','Tipo','Moneda','Monto','Nombre','Concepto','Notas']];
-  filtered.forEach(function(m){rows.push([m.usuario||'',m.fecha||'',m.tipo||'',m.moneda||'',m.monto||0,m.nombre||'',m.concepto||'',m.notas||'']);});
-  // Resumen al final
-  rows.push([]);rows.push(['RESUMEN']);
-  var monedas=[{k:'$',n:'Dólares'},{k:'Bs.',n:'Bolívares'},{k:'€',n:'Euros'}];
+  var rows=[['Usuario','Fecha','Moneda','Ingreso','Egreso','Nombre','Concepto','Notas']];
+  filtered.forEach(function(m){
+    var esIng=m.tipo==='Ingreso';
+    rows.push([m.usuario||'',m.fecha||'',m.moneda||'',esIng?(parseFloat(m.monto)||0):'',(esIng?'':(parseFloat(m.monto)||0)),m.nombre||'',m.concepto||'',m.notas||'']);
+  });
+  rows.push([]);
+  var monedas=[{k:'$',n:'Dolares'},{k:'Bs.',n:'Bolivares'},{k:'EUR',n:'Euros'}];
+  rows.push(['TOTALES POR MONEDA','','','','','','','']);
+  rows.push(['Moneda','','Total Ingresos','Total Egresos','Saldo','','','']);
   monedas.forEach(function(mon){
     var ing=0,egr=0;
     filtered.forEach(function(m){if(m.moneda!==mon.k)return;if(m.tipo==='Ingreso')ing+=parseFloat(m.monto)||0;else egr+=parseFloat(m.monto)||0;});
-    rows.push([mon.n,'Ingresos',ing,'Egresos',egr,'Saldo',ing-egr]);
+    rows.push([mon.n,'',ing.toFixed(2),egr.toFixed(2),(ing-egr).toFixed(2),'','','']);
   });
   var csv=rows.map(function(r){return r.map(function(c){return '"'+(String(c).replace(/"/g,'""'))+'"';}).join(',');}).join('\n');
-  var bom='\uFEFF';
-  var blob=new Blob([bom+csv],{type:'text/csv;charset=utf-8'});
+  var blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
   var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='control-efectivo.csv';a.click();
+}
+
+function buildFullTable(data){
+  var monedas=[{k:'$',n:'Dolares'},{k:'Bs.',n:'Bolivares'},{k:'EUR',n:'Euros'}];
+  var html='<table style="width:100%;border-collapse:collapse;font-size:10pt"><thead><tr style="background:#f3f4f6">';
+  ['Usuario','Fecha','Moneda','Ingreso','Egreso','Nombre','Concepto','Notas'].forEach(function(h){
+    html+='<th style="text-align:left;padding:6px 8px;border:1px solid #ccc;font-size:9pt;text-transform:uppercase">'+h+'</th>';
+  });
+  html+='</tr></thead><tbody>';
+  data.forEach(function(m){
+    var esIng=m.tipo==='Ingreso';
+    html+='<tr style="border-left:3px solid '+(esIng?'#15803d':'#b91c1c')+'">'+
+      '<td style="padding:5px 8px;border:1px solid #eee">'+(m.usuario||'')+'</td>'+
+      '<td style="padding:5px 8px;border:1px solid #eee">'+(m.fecha||'')+'</td>'+
+      '<td style="padding:5px 8px;border:1px solid #eee;text-align:center">'+(m.moneda||'')+'</td>'+
+      '<td style="padding:5px 8px;border:1px solid #eee;color:#15803d;font-weight:700;text-align:right">'+(esIng?fmtM(m.monto,m.moneda):'')+'</td>'+
+      '<td style="padding:5px 8px;border:1px solid #eee;color:#b91c1c;font-weight:700;text-align:right">'+(!esIng?fmtM(m.monto,m.moneda):'')+'</td>'+
+      '<td style="padding:5px 8px;border:1px solid #eee">'+(m.nombre||'')+'</td>'+
+      '<td style="padding:5px 8px;border:1px solid #eee">'+(m.concepto||'')+'</td>'+
+      '<td style="padding:5px 8px;border:1px solid #eee;color:#888">'+(m.notas||'')+'</td>'+
+    '</tr>';
+  });
+  // Totales
+  html+='<tr style="background:#f3f4f6;font-weight:700"><td colspan="3" style="padding:6px 8px;border:1px solid #ccc">TOTALES</td>';
+  var tIng={'$':0,'Bs.':0,'€':0},tEgr={'$':0,'Bs.':0,'€':0};
+  data.forEach(function(m){if(m.tipo==='Ingreso')tIng[m.moneda]=(tIng[m.moneda]||0)+(parseFloat(m.monto)||0);else tEgr[m.moneda]=(tEgr[m.moneda]||0)+(parseFloat(m.monto)||0);});
+  var ingStr=Object.keys(tIng).filter(function(k){return tIng[k]>0;}).map(function(k){return fmtM(tIng[k],k);}).join(' | ')||'—';
+  var egrStr=Object.keys(tEgr).filter(function(k){return tEgr[k]>0;}).map(function(k){return fmtM(tEgr[k],k);}).join(' | ')||'—';
+  html+='<td style="padding:6px 8px;border:1px solid #ccc;color:#15803d">'+ingStr+'</td>'+
+        '<td style="padding:6px 8px;border:1px solid #ccc;color:#b91c1c">'+egrStr+'</td>'+
+        '<td colspan="3" style="padding:6px 8px;border:1px solid #ccc"></td></tr>';
+  html+='</tbody></table>';
+  return html;
 }
 
 function doWord(){
   document.getElementById('export-menu').classList.remove('open');
   var filtered=getFiltered();
-  var html='<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;font-size:12pt}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:6px 8px;font-size:10pt}th{background:#f3f4f6;font-weight:bold;text-transform:uppercase;font-size:9pt}.ing{color:#15803d;font-weight:bold}.egr{color:#b91c1c;font-weight:bold}h2{font-size:16pt;margin-bottom:4pt}p{font-size:10pt;color:#666;margin-bottom:12pt}</style></head><body>';
+  var html='<html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;font-size:10pt}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:5px 7px;font-size:9pt}th{background:#f3f4f6;font-weight:bold;text-transform:uppercase;font-size:8pt}h2{font-size:16pt;margin-bottom:4pt}p{font-size:10pt;color:#666;margin-bottom:10pt}</style></head><body>';
   html+='<h2>Control de Efectivo</h2><p>'+getSubtitle()+'</p>';
-  html+=buildResumen(filtered).replace(/style="[^"]*font-size:18px[^"]*"/g,'style="font-size:14pt;font-weight:bold"');
-  html+=buildTable(filtered);
+  html+=buildResumen(filtered);
+  html+=buildFullTable(filtered);
   html+='</body></html>';
   var blob=new Blob([html],{type:'application/msword'});
   var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='control-efectivo.doc';a.click();
 }
+
+function tieneAccesoEfectivo(u){
+  if(!u)return false;
+  if(u.rol==='admin')return true;
+  if(!u.permisos||u.permisos==='todos')return true;
+  try{var p=JSON.parse(u.permisos);return p.indexOf('control-efectivo')>=0;}catch(e){return false;}
+}
+function showSinAcceso(){showView('view-sin-acceso');}
+function doLogout(){currentUser=null;showView('view-login');}
 
 showView('view-login');
 </script>
